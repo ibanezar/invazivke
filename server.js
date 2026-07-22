@@ -67,6 +67,9 @@ function requireEditor(req, res, next) {
   next();
 }
 
+// zdravstvena točka (za nadzor gostitelja)
+app.get('/healthz', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
 // --- API: katalog vrst ---
 app.get('/api/species', (req, res) => {
   const { group } = req.query;
@@ -216,8 +219,11 @@ app.use((err, req, res, next) => {
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Invazivke tečejo na http://localhost:${PORT}`);
-    console.log(`Skrbniška plošča: http://localhost:${PORT}/admin.html (žeton: ${ADMIN_TOKEN})`);
+    console.log(`Invazivke tečejo na vratih ${PORT}`);
+    // zasilni žeton izpišemo le v razvoju, ne v produkciji
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Skrbniška plošča: http://localhost:${PORT}/admin.html (zasilni žeton: ${ADMIN_TOKEN})`);
+    }
   });
 }
 

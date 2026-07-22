@@ -1,0 +1,26 @@
+# Render Blueprint za Invazivke.
+# Postavitev: na https://dashboard.render.com > New > Blueprint, izberi ta repozitorij.
+# Render prebere to datoteko in ustvari spletno storitev s trajnim diskom.
+services:
+  - type: web
+    name: invazivke
+    runtime: node
+    plan: starter          # trajni disk zahteva plačljiv paket (Free nima diska)
+    region: frankfurt      # najbližja Sloveniji
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_FILE
+        value: /data/invazivke.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      - key: ADMIN_TOKEN
+        generateValue: true   # naključni zasilni žeton (prvi skrbnik ga uporabi za vstop)
+    disk:
+      name: invazivke-data
+      mountPath: /data        # tu živita baza in naložene fotografije (preživita ponovne postavitve)
+      sizeGB: 1
