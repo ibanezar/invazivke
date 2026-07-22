@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 104" role="img" aria-label="Invazivke — tujerodne vrste v Sloveniji">
+  <g transform="translate(4,10) scale(0.84)">
+    <path d="M50 6 C31 6 16 21 16 40 C16 64 50 94 50 94 C50 94 84 64 84 40 C84 21 69 6 50 6 Z" fill="#f2f8f4"/>
+    <path d="M50 21 C64 29 66 47 50 59 C34 47 36 29 50 21 Z" fill="#52b788"/>
+    <path d="M50 25 L50 55 M50 47 C46 44 43 42 41 38 M50 47 C54 44 57 42 59 38 M50 38 C47 36 45 34 44 31 M50 38 C53 36 55 34 56 31"
+          fill="none" stroke="#1b4332" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+  <text x="102" y="54" font-family="Sora, 'Segoe UI', system-ui, sans-serif" font-size="42" font-weight="700" letter-spacing="-0.5" fill="#ffffff">Invazivke</text>
+  <text x="104" y="80" font-family="Inter, system-ui, sans-serif" font-size="15.5" font-weight="500" letter-spacing="0.3" fill="#b7e4c7">Tujerodne vrste v Sloveniji</text>
+</svg>

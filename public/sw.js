@@ -1,5 +1,5 @@
 // Service worker: predpomnjenje statičnih datotek za delo na terenu s slabim signalom.
-const CACHE = 'invazivke-v4';
+const CACHE = 'invazivke-v5';
 const STATIC = [
   '/',
   '/index.html',
@@ -11,6 +11,8 @@ const STATIC = [
   '/app.js',
   '/icon.svg',
   '/logo.svg',
+  '/logo-wordmark.svg',
+  '/logo-wordmark-light.svg',
   '/manifest.webmanifest',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
