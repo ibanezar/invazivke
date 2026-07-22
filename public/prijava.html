@@ -6,6 +6,9 @@
   <title>Invazivke – prijavi opazovanje</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#1b4332" />
 </head>
 <body>
   <header>
@@ -14,6 +17,7 @@
       <a href="/">Zemljevid</a>
       <a href="/katalog.html">Katalog vrst</a>
       <a href="/prijava.html" class="active">Prijavi opazovanje</a>
+      <a href="/moje.html">Moje prijave</a>
       <a href="/admin.html">Skrbništvo</a>
     </nav>
   </header>
@@ -131,25 +135,33 @@
       btn.textContent = 'Pošiljam …';
       try {
         const compressed = await compressImage(file);
+        const fields = {
+          species_id: document.getElementById('species').value,
+          lat, lng,
+          quantity: document.getElementById('quantity').value,
+          note: document.getElementById('note').value,
+          contact: document.getElementById('contact').value,
+        };
         const fd = new FormData();
-        fd.set('species_id', document.getElementById('species').value);
-        fd.set('lat', lat);
-        fd.set('lng', lng);
-        fd.set('quantity', document.getElementById('quantity').value);
-        fd.set('note', document.getElementById('note').value);
-        fd.set('contact', document.getElementById('contact').value);
+        for (const [k, v] of Object.entries(fields)) fd.set(k, v);
         fd.set('photo', compressed, compressed.name || 'foto.jpg');
 
-        const res = await fetch('/api/observations', { method: 'POST', body: fd });
+        let res;
+        try {
+          res = await fetch('/api/observations', { method: 'POST', body: fd });
+        } catch {
+          // ni povezave: shrani v offline vrsto, pošlje se ob naslednji povezavi
+          await queueAdd({ fields, photo: compressed, queued_at: new Date().toISOString() });
+          showAlert(alertEl, 'success', 'Ni povezave – prijava je shranjena na napravi in bo poslana samodejno, ko bo omrežje spet na voljo.');
+          resetForm(e.target);
+          return;
+        }
         const body = await res.json();
         if (!res.ok) throw new Error(body.error || 'Napaka pri oddaji.');
 
-        showAlert(alertEl, 'success', 'Hvala! Opazovanje je oddano in čaka na pregled strokovnjaka.');
-        e.target.reset();
-        document.getElementById('preview').hidden = true;
-        if (marker) { map.removeLayer(marker); marker = null; }
-        lat = lng = null;
-        document.getElementById('coords').textContent = 'Lokacija še ni izbrana.';
+        rememberMyObservation(body.id);
+        showAlert(alertEl, 'success', 'Hvala! Opazovanje je oddano in čaka na pregled strokovnjaka. Status spremljaš na strani »Moje prijave«.');
+        resetForm(e.target);
       } catch (err) {
         showAlert(alertEl, 'error', err.message);
       } finally {
@@ -158,7 +170,26 @@
       }
     });
 
+    function resetForm(form) {
+      form.reset();
+      document.getElementById('preview').hidden = true;
+      if (marker) { map.removeLayer(marker); marker = null; }
+      lat = lng = null;
+      document.getElementById('coords').textContent = 'Lokacija še ni izbrana.';
+    }
+
+    async function flushAndNotify() {
+      try {
+        const sent = await flushQueue();
+        if (sent > 0) {
+          showAlert(document.getElementById('alert'), 'success', `Poslane so bile ${sent === 1 ? '1 čakajoča prijava' : sent + ' čakajoče prijave'} iz offline vrste.`);
+        }
+      } catch {}
+    }
+    window.addEventListener('online', flushAndNotify);
+
     (async () => {
+      flushAndNotify();
       const list = await fetchSpecies();
       const sel = document.getElementById('species');
       for (const s of list) {

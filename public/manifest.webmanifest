@@ -1,0 +1,13 @@
+{
+  "name": "Invazivke – sporočanje invazivnih vrst",
+  "short_name": "Invazivke",
+  "description": "Prijava opazovanj invazivnih tujerodnih vrst v Sloveniji",
+  "lang": "sl",
+  "start_url": "/prijava.html",
+  "display": "standalone",
+  "background_color": "#f6f8f6",
+  "theme_color": "#1b4332",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

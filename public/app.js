@@ -62,3 +62,77 @@ function showAlert(el, type, msg) {
   el.hidden = false;
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+// --- Moje prijave: ID-ji oddanih opazovanj v localStorage ---
+const MY_KEY = 'invazivke-moje';
+
+function rememberMyObservation(id) {
+  const ids = JSON.parse(localStorage.getItem(MY_KEY) || '[]');
+  if (!ids.includes(id)) ids.push(id);
+  localStorage.setItem(MY_KEY, JSON.stringify(ids));
+}
+
+function myObservationIds() {
+  return JSON.parse(localStorage.getItem(MY_KEY) || '[]');
+}
+
+// --- Offline čakalna vrsta prijav (IndexedDB) ---
+function openQueueDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('invazivke-queue', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('queue', { keyPath: 'key', autoIncrement: true });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function queueOp(mode, fn) {
+  return openQueueDb().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction('queue', mode);
+        const req = fn(tx.objectStore('queue'));
+        tx.oncomplete = () => resolve(req && req.result);
+        tx.onerror = () => reject(tx.error);
+      })
+  );
+}
+
+function queueAdd(record) {
+  return queueOp('readwrite', (store) => store.add(record));
+}
+function queueAll() {
+  return queueOp('readonly', (store) => store.getAll());
+}
+function queueDelete(key) {
+  return queueOp('readwrite', (store) => store.delete(key));
+}
+
+// Poskusi poslati vse čakajoče prijave; vrne število uspešno poslanih.
+async function flushQueue() {
+  let sent = 0;
+  const items = (await queueAll()) || [];
+  for (const item of items) {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(item.fields)) fd.set(k, v);
+    fd.set('photo', item.photo, 'foto.jpg');
+    try {
+      const res = await fetch('/api/observations', { method: 'POST', body: fd });
+      if (res.status >= 500) continue; // strežniška napaka: pusti v vrsti
+      if (res.ok) {
+        const body = await res.json();
+        rememberMyObservation(body.id);
+        sent++;
+      }
+      // 4xx (npr. neveljavni podatki) nima smisla ponavljati – odstrani
+      await queueDelete(item.key);
+    } catch {
+      break; // še vedno brez povezave
+    }
+  }
+  return sent;
+}
