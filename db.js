@@ -25,6 +25,17 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_obs_status ON observations(status);
   CREATE INDEX IF NOT EXISTS idx_obs_species ON observations(species_id);
+  CREATE TABLE IF NOT EXISTS admins (
+    id         TEXT PRIMARY KEY,
+    username   TEXT NOT NULL UNIQUE,
+    pass_hash  TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS sessions (
+    token      TEXT PRIMARY KEY,
+    admin_id   TEXT NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL
+  );
 `);
 
 // enkratna migracija iz stare JSON shrambe
@@ -94,4 +105,54 @@ function stats() {
   };
 }
 
-module.exports = { listObservations, insertObservation, getObservation, updateStatus, deleteObservation, stats };
+// --- skrbniki in seje ---
+const crypto = require('crypto');
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return salt + ':' + crypto.scryptSync(password, salt, 32).toString('hex');
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = stored.split(':');
+  const candidate = crypto.scryptSync(password, salt, 32);
+  return crypto.timingSafeEqual(candidate, Buffer.from(hash, 'hex'));
+}
+
+function createAdmin(username, password) {
+  db.prepare('INSERT INTO admins (id, username, pass_hash, created_at) VALUES (?, ?, ?, ?)').run(
+    crypto.randomUUID(), username, hashPassword(password), new Date().toISOString()
+  );
+}
+
+function findAdmin(username) {
+  return db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
+}
+
+function adminCount() {
+  return db.prepare('SELECT COUNT(*) AS n FROM admins').get().n;
+}
+
+const SESSION_HOURS = 12;
+
+function createSession(adminId) {
+  db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(new Date().toISOString());
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires_at = new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString();
+  db.prepare('INSERT INTO sessions (token, admin_id, expires_at) VALUES (?, ?, ?)').run(token, adminId, expires_at);
+  return { token, expires_at };
+}
+
+function getSession(token) {
+  const s = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  return s && s.expires_at > new Date().toISOString() ? s : null;
+}
+
+function deleteSession(token) {
+  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+}
+
+module.exports = {
+  listObservations, insertObservation, getObservation, updateStatus, deleteObservation, stats,
+  createAdmin, findAdmin, adminCount, verifyPassword, createSession, getSession, deleteSession,
+};

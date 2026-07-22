@@ -41,7 +41,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 function isAdmin(req) {
-  return req.get('X-Admin-Token') === ADMIN_TOKEN;
+  const token = req.get('X-Admin-Token');
+  if (!token) return false;
+  if (db.getSession(token)) return true;
+  // zasilni statični žeton: dokler ni ustvarjen noben skrbnik (prvi zagon)
+  // ali če je ADMIN_TOKEN izrecno nastavljen v okolju
+  if (process.env.ADMIN_TOKEN || db.adminCount() === 0) return token === ADMIN_TOKEN;
+  return false;
 }
 function requireAdmin(req, res, next) {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Neveljaven skrbniški žeton.' });
@@ -173,6 +179,21 @@ app.delete('/api/observations/:id', requireAdmin, (req, res) => {
 });
 
 app.get('/api/admin/check', requireAdmin, (req, res) => res.json({ ok: true }));
+
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body || {};
+  const admin = username && password ? db.findAdmin(username) : null;
+  if (!admin || !db.verifyPassword(password, admin.pass_hash)) {
+    return res.status(401).json({ error: 'Napačno uporabniško ime ali geslo.' });
+  }
+  res.json(db.createSession(admin.id));
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  const token = req.get('X-Admin-Token');
+  if (token) db.deleteSession(token);
+  res.json({ ok: true });
+});
 
 // napake multerja in ostalo vrnemo kot JSON
 app.use((err, req, res, next) => {

@@ -26,12 +26,13 @@
     <h1>Skrbniška plošča – verifikacija opazovanj</h1>
 
     <div id="login" hidden>
-      <p class="subtitle">Za dostop vnesi skrbniški žeton.</p>
+      <p class="subtitle">Prijavi se s skrbniškim računom. Račun ustvariš z <code>node scripts/add-admin.js &lt;ime&gt; &lt;geslo&gt;</code>; dokler ni računov, deluje zasilni žeton (pusti ime prazno).</p>
       <div class="toolbar">
-        <input type="password" id="token" placeholder="Skrbniški žeton" />
+        <input type="text" id="username" placeholder="Uporabniško ime" autocomplete="username" />
+        <input type="password" id="password" placeholder="Geslo ali zasilni žeton" autocomplete="current-password" />
         <button id="btn-login">Prijava</button>
       </div>
-      <div class="alert error" id="login-error" hidden>Neveljaven žeton.</div>
+      <div class="alert error" id="login-error" hidden>Prijava ni uspela.</div>
     </div>
 
     <div id="panel" hidden>
@@ -71,6 +72,8 @@
     }
 
     function logout() {
+      const token = getToken();
+      if (token) fetch('/api/admin/logout', { method: 'POST', headers: { 'X-Admin-Token': token } });
       sessionStorage.removeItem(tokenKey);
       document.getElementById('panel').hidden = true;
       document.getElementById('login').hidden = false;
@@ -167,10 +170,24 @@
     }
 
     document.getElementById('btn-login').addEventListener('click', async () => {
-      const ok = await tryLogin(document.getElementById('token').value);
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      let ok = false;
+      if (username) {
+        // prijava z računom -> sejni žeton
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        if (res.ok) ok = await tryLogin((await res.json()).token);
+      } else {
+        // zasilni statični žeton
+        ok = await tryLogin(password);
+      }
       document.getElementById('login-error').hidden = ok;
     });
-    document.getElementById('token').addEventListener('keydown', (e) => {
+    document.getElementById('password').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('btn-login').click();
     });
     document.getElementById('btn-logout').addEventListener('click', logout);

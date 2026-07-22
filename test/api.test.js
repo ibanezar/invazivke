@@ -9,6 +9,7 @@ process.env.DB_FILE = path.join(process.env.UPLOAD_DIR, 'test.db');
 process.env.ADMIN_TOKEN = 'test-token';
 
 const app = require('../server');
+const db = require('../db');
 let server, base;
 
 // 1x1 px JPEG
@@ -123,6 +124,34 @@ test('izvoz GeoJSON vrne veljavno FeatureCollection s koordinatami [lng, lat]', 
 test('privzeti izvoz vsebuje samo potrjena opazovanja', async () => {
   const gj = await (await fetch(base + '/api/export.geojson')).json();
   assert.ok(gj.features.every((f) => f.properties.status === 'potrjeno'));
+});
+
+test('prijava skrbnika: napačni podatki 401, pravilni vrnejo sejni žeton', async () => {
+  db.createAdmin('ana', 'zeloVarnoGeslo1');
+
+  const bad = await fetch(base + '/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'ana', password: 'napacno' }),
+  });
+  assert.strictEqual(bad.status, 401);
+
+  const ok = await fetch(base + '/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'ana', password: 'zeloVarnoGeslo1' }),
+  });
+  assert.strictEqual(ok.status, 200);
+  const { token, expires_at } = await ok.json();
+  assert.ok(token && expires_at > new Date().toISOString());
+
+  const check = await fetch(base + '/api/admin/check', { headers: { 'X-Admin-Token': token } });
+  assert.strictEqual(check.status, 200);
+
+  // odjava razveljavi sejo
+  await fetch(base + '/api/admin/logout', { method: 'POST', headers: { 'X-Admin-Token': token } });
+  const after = await fetch(base + '/api/admin/check', { headers: { 'X-Admin-Token': token } });
+  assert.strictEqual(after.status, 401);
 });
 
 test('verifikacija zahteva žeton in spremeni status', async () => {
