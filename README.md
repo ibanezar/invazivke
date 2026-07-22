@@ -8,6 +8,8 @@ Spletna aplikacija za sporočanje opazovanj invazivnih tujerodnih vrst v Sloveni
 - **Prijava opazovanja** – zajem GPS lokacije telefona ali izbira točke na zemljevidu, obvezna fotografija (samodejno pomanjšanje slike na napravi pred nalaganjem), ocena količine, opomba in neobvezen kontakt.
 - **Interaktivni zemljevid** – Leaflet + OpenStreetMap prikaz opazovanj po Sloveniji s filtri po vrsti, statusu in datumu. Privzeto so prikazana samo potrjena opazovanja.
 - **Skrbniška plošča** – strokovnjak pregleda prijavo (fotografijo, lokacijo, opombo) in jo označi kot *Potrjeno*, *Zavrnjeno* ali *Potrebuje več podatkov*. Kontaktni podatki prijaviteljev so vidni samo skrbniku.
+- **Moje prijave** – prijave, oddane z naprave, s statusom verifikacije in odgovorom strokovnjaka (ID-ji v localStorage, brez registracije).
+- **PWA / delo na terenu** – service worker predpomni aplikacijo in katalog vrst za offline uporabo; prijava, oddana brez signala, se shrani v čakalno vrsto (IndexedDB) in pošlje samodejno ob ponovni povezavi. Markerji na zemljevidu se pri večjem številu gručijo (Leaflet.markercluster).
 
 ## Zagon
 
@@ -53,7 +55,5 @@ Skrbniške zahteve pošljejo žeton v glavi `X-Admin-Token`.
 ## Nadaljnji koraki
 
 - PostgreSQL + PostGIS namesto JSON shrambe; prava avtentikacija skrbnikov (več uporabnikov, vloge).
-- Gručenje markerjev (Leaflet.markercluster) pri večjem številu opazovanj.
 - Izvoz podatkov v formatu, združljivem s [invazivke.si](https://www.invazivke.si) (Zavod za gozdove RS).
-- PWA/offline način za teren s slabim signalom.
 - E-poštno obveščanje prijaviteljev ob spremembi statusa.

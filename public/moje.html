@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invazivke – moje prijave</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#1b4332" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">🌿 Invazivke</a>
+    <nav>
+      <a href="/">Zemljevid</a>
+      <a href="/katalog.html">Katalog vrst</a>
+      <a href="/prijava.html">Prijavi opazovanje</a>
+      <a href="/moje.html" class="active">Moje prijave</a>
+      <a href="/admin.html">Skrbništvo</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Moje prijave</h1>
+    <p class="subtitle">Prijave, oddane s te naprave, in njihov status verifikacije.</p>
+
+    <div class="alert" id="queue-info" hidden></div>
+    <div class="cards" id="cards"></div>
+    <p id="empty" hidden>S te naprave še ni bilo oddanih prijav. <a href="/prijava.html">Prijavi prvo opazovanje.</a></p>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    (async () => {
+      // čakajoče v offline vrsti
+      try {
+        const queued = (await queueAll()) || [];
+        if (queued.length) {
+          const el = document.getElementById('queue-info');
+          el.className = 'alert error';
+          el.textContent = `Na napravi ${queued.length === 1 ? 'čaka 1 prijava' : 'čakata/jo ' + queued.length + ' prijave'} na povezavo z omrežjem. Odpri stran »Prijavi opazovanje«, ko boš spet na omrežju.`;
+          el.hidden = false;
+        }
+      } catch {}
+
+      const ids = new Set(myObservationIds());
+      const wrap = document.getElementById('cards');
+      if (!ids.size) {
+        document.getElementById('empty').hidden = false;
+        return;
+      }
+
+      const [speciesList, all] = await Promise.all([
+        fetchSpecies(),
+        fetch('/api/observations').then((r) => r.json()),
+      ]);
+      const species = speciesById(speciesList);
+      const mine = all.filter((o) => ids.has(o.id));
+
+      if (!mine.length) {
+        document.getElementById('empty').hidden = false;
+        return;
+      }
+
+      for (const o of mine) {
+        const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓', name_lat: '' };
+        const card = document.createElement('div');
+        card.className = 'card';
+        const head = document.createElement('div');
+        head.className = 'head';
+        head.innerHTML = `<span class="emoji">${s.emoji}</span><div><h3>${s.name_sl}</h3><div class="lat">${s.name_lat}</div></div>`;
+        card.appendChild(head);
+        card.appendChild(badge(o.status, STATUS_LABELS[o.status]));
+        if (o.photo) {
+          const img = document.createElement('img');
+          img.src = o.photo;
+          img.className = 'obs-photo';
+          img.alt = s.name_sl;
+          card.appendChild(img);
+        }
+        const p = document.createElement('p');
+        p.innerHTML = `Oddano: ${fmtDate(o.created_at)}<br>Lokacija: ${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}` +
+          (o.quantity ? `<br>Količina: ${o.quantity}` : '');
+        card.appendChild(p);
+        if (o.status_note) {
+          const n = document.createElement('p');
+          n.innerHTML = '<span class="label">Odgovor strokovnjaka:</span> ';
+          n.append(o.status_note);
+          card.appendChild(n);
+        }
+        wrap.appendChild(card);
+      }
+    })();
+  </script>
+</body>
+</html>
