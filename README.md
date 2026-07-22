@@ -32,6 +32,36 @@ Testi:
 npm test
 ```
 
+Za lokalni zagon je potreben **Node ≥ 22.5** (uporablja vgrajeni `node:sqlite`).
+
+## Postavitev v splet (živa različica)
+
+Aplikacija je Node/Express strežnik s SQLite bazo in nalaganjem slik, zato potrebuje gostitelja s **trajnim diskom** (ne serverless). Baza (`invazivke.db`) in naložene fotografije (`uploads/`) se shranjujejo na disk prek spremenljivk `DB_FILE` in `UPLOAD_DIR`.
+
+### Render (najlažje – priporočeno)
+
+1. Potisni repozitorij na GitHub (že narejeno).
+2. Na <https://dashboard.render.com> izberi **New → Blueprint** in izberi ta repozitorij. Render prebere [`render.yaml`](render.yaml) in ustvari spletno storitev s 1 GB trajnim diskom (priklop na `/data`), regijo Frankfurt in naključnim `ADMIN_TOKEN`.
+3. Po prvi postavitvi ustvari skrbniški račun prek Render **Shell**:
+   ```bash
+   npm run add-admin -- <ime> <geslo>
+   ```
+   ali se enkratno prijavi z zasilnim žetonom (vrednost `ADMIN_TOKEN` iz zavihka Environment).
+4. Dobiš javni naslov oblike `https://invazivke.onrender.com`.
+
+> Trajni disk je na Render na voljo od paketa **Starter** naprej (Free nima diska – tam bi se baza in slike ob vsaki postavitvi izgubile).
+
+### Docker (Fly.io, Railway, VPS …)
+
+V repozitoriju je [`Dockerfile`](Dockerfile). Priklopi volumen na `/data` za trajnost:
+
+```bash
+docker build -t invazivke .
+docker run -p 3000:3000 -v invazivke-data:/data invazivke
+```
+
+Zdravstvena točka za nadzor gostitelja: `GET /healthz`.
+
 ## Arhitektura
 
 | Sloj | Tehnologija |
