@@ -15,10 +15,9 @@ if (!db.ROLES.includes(role)) {
   console.error(`Neveljavna vloga "${role}". Dovoljeni: ${db.ROLES.join(', ')}.`);
   process.exit(1);
 }
-try {
-  db.createAdmin(username, password, role);
-  console.log(`Skrbnik "${username}" (${role}) je ustvarjen.`);
-} catch (err) {
-  console.error(/UNIQUE/.test(err.message) ? `Skrbnik "${username}" že obstaja.` : err.message);
-  process.exit(1);
-}
+db.createAdmin(username, password, role)
+  .then(() => console.log(`Skrbnik "${username}" (${role}) je ustvarjen.`))
+  .catch((err) => {
+    console.error(/UNIQUE/.test(err.message) ? `Skrbnik "${username}" že obstaja.` : err.message);
+    process.exit(1);
+  });

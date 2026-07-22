@@ -9,10 +9,10 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-# baza in naložene fotografije naj gredo na priklopljen volumen /data
+# brez TURSO_DATABASE_URL gre baza (vključno s fotografijami) v lokalno
+# datoteko — za trajnost priklopi volumen na /data ali nastavi Turso env
 ENV NODE_ENV=production \
     DB_FILE=/data/invazivke.db \
-    UPLOAD_DIR=/data/uploads \
     PORT=3000
 VOLUME /data
 EXPOSE 3000

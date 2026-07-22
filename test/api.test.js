@@ -127,7 +127,7 @@ test('privzeti izvoz vsebuje samo potrjena opazovanja', async () => {
 });
 
 test('prijava skrbnika: napačni podatki 401, pravilni vrnejo sejni žeton', async () => {
-  db.createAdmin('ana', 'zeloVarnoGeslo1');
+  await db.createAdmin('ana', 'zeloVarnoGeslo1');
 
   const bad = await fetch(base + '/api/admin/login', {
     method: 'POST',
@@ -164,7 +164,7 @@ async function loginToken(username, password) {
 }
 
 test('vloga pregledovalca sme brati, ne sme pa verificirati ali brisati', async () => {
-  db.createAdmin('bralec', 'zeloVarnoGeslo1', 'pregledovalec');
+  await db.createAdmin('bralec', 'zeloVarnoGeslo1', 'pregledovalec');
   const token = await loginToken('bralec', 'zeloVarnoGeslo1');
 
   const check = await fetch(base + '/api/admin/check', { headers: { 'X-Admin-Token': token } });
@@ -191,7 +191,7 @@ test('vloga pregledovalca sme brati, ne sme pa verificirati ali brisati', async 
 });
 
 test('vloga urednika sme verificirati', async () => {
-  db.createAdmin('urednica', 'zeloVarnoGeslo2', 'urednik');
+  await db.createAdmin('urednica', 'zeloVarnoGeslo2', 'urednik');
   const token = await loginToken('urednica', 'zeloVarnoGeslo2');
   const [obs] = await (await fetch(base + '/api/observations')).json();
   const patch = await fetch(base + `/api/observations/${obs.id}/status`, {

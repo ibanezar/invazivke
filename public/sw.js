@@ -38,7 +38,7 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
 
   // API in slike: najprej mreža, ob izpadu predpomnilnik (katalog vrst deluje offline)
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/uploads/')) {
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/photos/') || url.pathname.startsWith('/uploads/')) {
     e.respondWith(
       fetch(e.request)
         .then((res) => {

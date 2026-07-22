@@ -11,9 +11,10 @@
     "fetch-photos": "node scripts/fetch-photos.js"
   },
   "engines": {
-    "node": ">=22.5"
+    "node": ">=18"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1"
   },
