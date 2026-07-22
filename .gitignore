@@ -1,5 +1,7 @@
 node_modules/
 uploads/
 data/observations.json
+data/observations.json.migrated
+data/invazivke.db*
 *.tmp
 .env

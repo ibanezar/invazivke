@@ -37,9 +37,9 @@ npm test
 |---|---|
 | Frontend | Statični HTML/CSS/JS (brez build koraka), Leaflet.js + OpenStreetMap |
 | Backend | Node.js + Express, Multer za nalaganje slik |
-| Shramba | JSON datoteka (`data/observations.json`) + `uploads/` za slike |
+| Shramba | SQLite (vgrajeni `node:sqlite`, datoteka `data/invazivke.db`) + `uploads/` za slike |
 
-Shramba v JSON datoteki je namerna poenostavitev za MVP — API je zasnovan tako, da jo je enostavno zamenjati s PostgreSQL + PostGIS (funkciji `loadObservations`/`saveObservations` v `server.js`).
+Shramba je izolirana v `db.js`; ob prvem zagonu se morebitna stara JSON shramba (`data/observations.json`) samodejno migrira v SQLite. Pot do baze nastaviš z `DB_FILE`. Za večje namestitve je `db.js` edina datoteka, ki jo je treba prilagoditi za PostgreSQL + PostGIS.
 
 ### API
 
@@ -58,6 +58,6 @@ Skrbniške zahteve pošljejo žeton v glavi `X-Admin-Token`.
 
 ## Nadaljnji koraki
 
-- PostgreSQL + PostGIS namesto JSON shrambe; prava avtentikacija skrbnikov (več uporabnikov, vloge).
+- PostgreSQL + PostGIS za večje namestitve; prava avtentikacija skrbnikov (več uporabnikov, vloge).
 - E-poštno obveščanje prijaviteljev ob spremembi statusa.
 - Uskladitev izvoznih polj s standardom Darwin Core / [invazivke.si](https://www.invazivke.si) (Zavod za gozdove RS).
