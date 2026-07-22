@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invazivke – skrbniška plošča</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">🌿 Invazivke</a>
+    <nav>
+      <a href="/">Zemljevid</a>
+      <a href="/katalog.html">Katalog vrst</a>
+      <a href="/prijava.html">Prijavi opazovanje</a>
+      <a href="/admin.html" class="active">Skrbništvo</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Skrbniška plošča – verifikacija opazovanj</h1>
+
+    <div id="login" hidden>
+      <p class="subtitle">Za dostop vnesi skrbniški žeton.</p>
+      <div class="toolbar">
+        <input type="password" id="token" placeholder="Skrbniški žeton" />
+        <button id="btn-login">Prijava</button>
+      </div>
+      <div class="alert error" id="login-error" hidden>Neveljaven žeton.</div>
+    </div>
+
+    <div id="panel" hidden>
+      <div class="toolbar">
+        <select id="f-status">
+          <option value="neverificirano">Čakajoča (neverificirana)</option>
+          <option value="vec-podatkov">Potrebuje več podatkov</option>
+          <option value="potrjeno">Potrjena</option>
+          <option value="zavrnjeno">Zavrnjena</option>
+          <option value="">Vsa</option>
+        </select>
+        <span class="hint" id="count"></span>
+        <button class="secondary" id="btn-logout" style="margin-left:auto">Odjava</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Fotografija</th><th>Vrsta</th><th>Podatki</th><th>Status</th><th>Ukrepi</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    let species = {};
+    const tokenKey = 'invazivke-admin-token';
+    const getToken = () => sessionStorage.getItem(tokenKey) || '';
+
+    async function api(url, opts = {}) {
+      opts.headers = Object.assign({ 'X-Admin-Token': getToken() }, opts.headers);
+      const res = await fetch(url, opts);
+      if (res.status === 401) { logout(); throw new Error('Neveljaven žeton.'); }
+      return res;
+    }
+
+    function logout() {
+      sessionStorage.removeItem(tokenKey);
+      document.getElementById('panel').hidden = true;
+      document.getElementById('login').hidden = false;
+    }
+
+    async function refresh() {
+      const st = document.getElementById('f-status').value;
+      const res = await api('/api/observations' + (st ? '?status=' + st : ''));
+      const list = await res.json();
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+      document.getElementById('count').textContent = `Zadetkov: ${list.length}`;
+
+      for (const o of list) {
+        const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓', name_lat: '' };
+        const tr = document.createElement('tr');
+
+        const tdPhoto = document.createElement('td');
+        if (o.photo) tdPhoto.innerHTML = `<a href="${o.photo}" target="_blank"><img src="${o.photo}" alt="" style="max-width:120px;max-height:90px;border-radius:6px"></a>`;
+        tr.appendChild(tdPhoto);
+
+        const tdSpecies = document.createElement('td');
+        tdSpecies.innerHTML = `<strong>${s.emoji} ${s.name_sl}</strong><br><em>${s.name_lat}</em>`;
+        tr.appendChild(tdSpecies);
+
+        const tdData = document.createElement('td');
+        tdData.innerHTML =
+          `${fmtDate(o.created_at)}<br>` +
+          `<a href="https://www.openstreetmap.org/?mlat=${o.lat}&mlon=${o.lng}#map=16/${o.lat}/${o.lng}" target="_blank">${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}</a><br>` +
+          `Količina: ${o.quantity || '–'}<br>` +
+          (o.note ? `Opomba: ${o.note.replace(/</g, '&lt;')}<br>` : '') +
+          (o.contact ? `Kontakt: ${o.contact.replace(/</g, '&lt;')}` : '');
+        tr.appendChild(tdData);
+
+        const tdStatus = document.createElement('td');
+        tdStatus.appendChild(badge(o.status, STATUS_LABELS[o.status]));
+        if (o.status_note) tdStatus.insertAdjacentHTML('beforeend', `<div class="hint">${o.status_note.replace(/</g, '&lt;')}</div>`);
+        tr.appendChild(tdStatus);
+
+        const tdActions = document.createElement('td');
+        const actions = [
+          ['potrjeno', 'Potrdi', ''],
+          ['zavrnjeno', 'Zavrni', 'danger'],
+          ['vec-podatkov', 'Več podatkov', 'warn'],
+        ];
+        for (const [status, label, cls] of actions) {
+          if (status === o.status) continue;
+          const b = document.createElement('button');
+          b.textContent = label;
+          if (cls) b.className = cls;
+          b.style.cssText = 'display:block;width:100%;margin-bottom:4px;padding:0.35rem 0.6rem;font-size:0.85rem';
+          b.addEventListener('click', async () => {
+            let status_note = null;
+            if (status !== 'potrjeno') {
+              status_note = prompt('Opomba za prijavitelja (neobvezno):') || '';
+            }
+            await api(`/api/observations/${o.id}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status, status_note }),
+            });
+            refresh();
+          });
+          tdActions.appendChild(b);
+        }
+        const del = document.createElement('button');
+        del.textContent = 'Izbriši';
+        del.className = 'secondary';
+        del.style.cssText = 'display:block;width:100%;padding:0.35rem 0.6rem;font-size:0.85rem';
+        del.addEventListener('click', async () => {
+          if (!confirm('Trajno izbrišem to opazovanje?')) return;
+          await api(`/api/observations/${o.id}`, { method: 'DELETE' });
+          refresh();
+        });
+        tdActions.appendChild(del);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      }
+      if (!list.length) tbody.innerHTML = '<tr><td colspan="5">Ni opazovanj za izbrani filter.</td></tr>';
+    }
+
+    async function tryLogin(token) {
+      sessionStorage.setItem(tokenKey, token);
+      const res = await fetch('/api/admin/check', { headers: { 'X-Admin-Token': token } });
+      if (!res.ok) {
+        sessionStorage.removeItem(tokenKey);
+        return false;
+      }
+      document.getElementById('login').hidden = true;
+      document.getElementById('panel').hidden = false;
+      refresh();
+      return true;
+    }
+
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const ok = await tryLogin(document.getElementById('token').value);
+      document.getElementById('login-error').hidden = ok;
+    });
+    document.getElementById('token').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-login').click();
+    });
+    document.getElementById('btn-logout').addEventListener('click', logout);
+    document.getElementById('f-status').addEventListener('change', refresh);
+
+    (async () => {
+      species = speciesById(await fetchSpecies());
+      if (!getToken() || !(await tryLogin(getToken()))) {
+        document.getElementById('login').hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>
