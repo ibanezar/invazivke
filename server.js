@@ -138,12 +138,31 @@ app.get('/api/inaturalist', aw(async (req, res) => {
 }));
 
 // --- API: izvoz podatkov (privzeto samo potrjena opazovanja) ---
-function exportList(req) {
+// ?vir=vse doda tudi iNaturalist zapise (z označenim virom)
+async function exportList(req) {
   const status = req.query.status || 'potrjeno';
-  return db.listObservations(
+  const local = (await db.listObservations(
     { status: status === 'vse' ? null : status, species: req.query.species },
     'ASC'
-  );
+  )).map((o) => ({ ...o, source: 'invazivke' }));
+
+  if (req.query.vir !== 'vse') return local;
+
+  let inat = await inaturalist.getObservations(SPECIES);
+  if (req.query.species) inat = inat.filter((o) => o.species_id === req.query.species);
+  const inatRows = inat.map((o) => ({
+    id: 'inat-' + o.inat_id,
+    species_id: o.species_id,
+    lat: o.lat,
+    lng: o.lng,
+    quantity: null,
+    note: o.uri,
+    status: 'potrjeno',
+    created_at: o.observed_on || '',
+    verified_at: null,
+    source: 'inaturalist',
+  }));
+  return [...local, ...inatRows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
 }
 
 const speciesMap = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
@@ -151,10 +170,10 @@ const speciesMap = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
 app.get('/api/export.csv', aw(async (req, res) => {
   const esc = (v) => (/[",\n]/.test(String(v ?? '')) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v ?? ''));
   const rows = [
-    ['id', 'znanstveno_ime', 'slovensko_ime', 'skupina', 'lat', 'lng', 'datum_opazovanja', 'kolicina', 'opomba', 'status', 'datum_verifikacije'],
+    ['id', 'znanstveno_ime', 'slovensko_ime', 'skupina', 'lat', 'lng', 'datum_opazovanja', 'kolicina', 'opomba', 'status', 'datum_verifikacije', 'vir'],
     ...(await exportList(req)).map((o) => {
       const s = speciesMap[o.species_id] || {};
-      return [o.id, s.name_lat, s.name_sl, s.group, o.lat, o.lng, o.created_at, o.quantity, o.note, o.status, o.verified_at];
+      return [o.id, s.name_lat, s.name_sl, s.group, o.lat, o.lng, o.created_at, o.quantity, o.note, o.status, o.verified_at, o.source];
     }),
   ];
   res.type('text/csv; charset=utf-8');
@@ -179,6 +198,7 @@ app.get('/api/export.geojson', aw(async (req, res) => {
         note: o.note,
         status: o.status,
         verifiedAt: o.verified_at,
+        source: o.source,
       },
     };
   });
