@@ -1,5 +1,5 @@
 // Service worker: predpomnjenje statičnih datotek za delo na terenu s slabim signalom.
-const CACHE = 'invazivke-v2';
+const CACHE = 'invazivke-v3';
 const STATIC = [
   '/',
   '/index.html',
@@ -10,6 +10,7 @@ const STATIC = [
   '/style.css',
   '/app.js',
   '/icon.svg',
+  '/logo.svg',
   '/manifest.webmanifest',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
@@ -56,7 +57,12 @@ self.addEventListener('fetch', (e) => {
       (hit) =>
         hit ||
         fetch(e.request).then((res) => {
-          if (res.ok && (url.origin === location.origin || url.hostname.endsWith('unpkg.com'))) {
+          const cacheable =
+            url.origin === location.origin ||
+            url.hostname.endsWith('unpkg.com') ||
+            url.hostname.endsWith('fonts.googleapis.com') ||
+            url.hostname.endsWith('fonts.gstatic.com');
+          if (res.ok && cacheable) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(e.request, copy));
           }
