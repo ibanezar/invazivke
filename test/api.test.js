@@ -154,6 +154,54 @@ test('prijava skrbnika: napačni podatki 401, pravilni vrnejo sejni žeton', asy
   assert.strictEqual(after.status, 401);
 });
 
+async function loginToken(username, password) {
+  const res = await fetch(base + '/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return (await res.json()).token;
+}
+
+test('vloga pregledovalca sme brati, ne sme pa verificirati ali brisati', async () => {
+  db.createAdmin('bralec', 'zeloVarnoGeslo1', 'pregledovalec');
+  const token = await loginToken('bralec', 'zeloVarnoGeslo1');
+
+  const check = await fetch(base + '/api/admin/check', { headers: { 'X-Admin-Token': token } });
+  assert.strictEqual((await check.json()).role, 'pregledovalec');
+
+  // vidi kontakt (skrbniški pogled)
+  const list = await (await fetch(base + '/api/observations', { headers: { 'X-Admin-Token': token } })).json();
+  assert.ok(list.some((o) => 'contact' in o));
+
+  // ne sme spremeniti statusa
+  const patch = await fetch(base + `/api/observations/${list[0].id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+    body: JSON.stringify({ status: 'potrjeno' }),
+  });
+  assert.strictEqual(patch.status, 403);
+
+  // ne sme brisati
+  const del = await fetch(base + `/api/observations/${list[0].id}`, {
+    method: 'DELETE',
+    headers: { 'X-Admin-Token': token },
+  });
+  assert.strictEqual(del.status, 403);
+});
+
+test('vloga urednika sme verificirati', async () => {
+  db.createAdmin('urednica', 'zeloVarnoGeslo2', 'urednik');
+  const token = await loginToken('urednica', 'zeloVarnoGeslo2');
+  const [obs] = await (await fetch(base + '/api/observations')).json();
+  const patch = await fetch(base + `/api/observations/${obs.id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+    body: JSON.stringify({ status: 'vec-podatkov' }),
+  });
+  assert.strictEqual(patch.status, 200);
+});
+
 test('verifikacija zahteva žeton in spremeni status', async () => {
   const [obs] = await (await fetch(base + '/api/observations')).json();
 

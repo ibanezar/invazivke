@@ -54,6 +54,19 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// vloga trenutnega skrbnika; zasilni statični žeton ima polne pravice (urednik)
+function adminRole(req) {
+  const session = db.getSession(req.get('X-Admin-Token'));
+  return session ? session.role : 'urednik';
+}
+function requireEditor(req, res, next) {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Neveljaven skrbniški žeton.' });
+  if (adminRole(req) !== 'urednik') {
+    return res.status(403).json({ error: 'Za to dejanje je potrebna vloga urednika.' });
+  }
+  next();
+}
+
 // --- API: katalog vrst ---
 app.get('/api/species', (req, res) => {
   const { group } = req.query;
@@ -161,8 +174,8 @@ app.get('/api/stats', (req, res) => {
   res.json(db.stats());
 });
 
-// --- API: verifikacija (skrbnik) ---
-app.patch('/api/observations/:id/status', requireAdmin, (req, res) => {
+// --- API: verifikacija (samo urednik) ---
+app.patch('/api/observations/:id/status', requireEditor, (req, res) => {
   const { status, status_note } = req.body;
   if (!STATUSES.includes(status)) return res.status(400).json({ error: 'Neveljaven status.' });
 
@@ -171,14 +184,14 @@ app.patch('/api/observations/:id/status', requireAdmin, (req, res) => {
   res.json(obs);
 });
 
-app.delete('/api/observations/:id', requireAdmin, (req, res) => {
+app.delete('/api/observations/:id', requireEditor, (req, res) => {
   const obs = db.deleteObservation(req.params.id);
   if (!obs) return res.status(404).json({ error: 'Opazovanje ne obstaja.' });
   if (obs.photo) fs.rm(path.join(UPLOAD_DIR, path.basename(obs.photo)), () => {});
   res.status(204).end();
 });
 
-app.get('/api/admin/check', requireAdmin, (req, res) => res.json({ ok: true }));
+app.get('/api/admin/check', requireAdmin, (req, res) => res.json({ ok: true, role: adminRole(req) }));
 
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};
