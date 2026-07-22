@@ -123,6 +123,75 @@ app.post('/api/observations', upload.single('photo'), (req, res) => {
   res.status(201).json({ id: obs.id, status: obs.status });
 });
 
+// --- API: izvoz podatkov (privzeto samo potrjena opazovanja) ---
+function exportList(req) {
+  let list = loadObservations();
+  const status = req.query.status || 'potrjeno';
+  if (status !== 'vse') list = list.filter((o) => o.status === status);
+  if (req.query.species) list = list.filter((o) => o.species_id === req.query.species);
+  return list.sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+
+const speciesMap = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
+
+app.get('/api/export.csv', (req, res) => {
+  const esc = (v) => (/[",\n]/.test(String(v ?? '')) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v ?? ''));
+  const rows = [
+    ['id', 'znanstveno_ime', 'slovensko_ime', 'skupina', 'lat', 'lng', 'datum_opazovanja', 'kolicina', 'opomba', 'status', 'datum_verifikacije'],
+    ...exportList(req).map((o) => {
+      const s = speciesMap[o.species_id] || {};
+      return [o.id, s.name_lat, s.name_sl, s.group, o.lat, o.lng, o.created_at, o.quantity, o.note, o.status, o.verified_at];
+    }),
+  ];
+  res.type('text/csv; charset=utf-8');
+  res.set('Content-Disposition', 'attachment; filename="invazivke-opazovanja.csv"');
+  // BOM, da Excel pravilno prepozna UTF-8 (šumniki)
+  res.send('\uFEFF' + rows.map((r) => r.map(esc).join(',')).join('\r\n'));
+});
+
+app.get('/api/export.geojson', (req, res) => {
+  const features = exportList(req).map((o) => {
+    const s = speciesMap[o.species_id] || {};
+    return {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [o.lng, o.lat] },
+      properties: {
+        id: o.id,
+        scientificName: s.name_lat,
+        vernacularName: s.name_sl,
+        group: s.group,
+        eventDate: o.created_at,
+        quantity: o.quantity,
+        note: o.note,
+        status: o.status,
+        verifiedAt: o.verified_at,
+      },
+    };
+  });
+  res.type('application/geo+json');
+  res.set('Content-Disposition', 'attachment; filename="invazivke-opazovanja.geojson"');
+  res.json({ type: 'FeatureCollection', features });
+});
+
+// --- API: statistika ---
+app.get('/api/stats', (req, res) => {
+  const list = loadObservations();
+  const by = (fn) => {
+    const acc = {};
+    for (const o of list) {
+      const k = fn(o);
+      acc[k] = (acc[k] || 0) + 1;
+    }
+    return acc;
+  };
+  res.json({
+    total: list.length,
+    by_status: by((o) => o.status),
+    by_species: by((o) => o.species_id),
+    by_month: by((o) => o.created_at.slice(0, 7)),
+  });
+});
+
 // --- API: verifikacija (skrbnik) ---
 app.patch('/api/observations/:id/status', requireAdmin, (req, res) => {
   const { status, status_note } = req.body;
