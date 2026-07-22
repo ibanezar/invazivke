@@ -17,7 +17,7 @@
 </head>
 <body>
   <header>
-    <a class="brand" href="/"><img src="logo.svg" alt="" /> Invazivke</a>
+    <a class="brand" href="/"><img src="logo-wordmark-light.svg" alt="Invazivke" /></a>
     <nav>
       <a href="/" class="active">Zemljevid</a>
       <a href="/katalog.html">Katalog vrst</a>
@@ -76,17 +76,19 @@
         const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓' };
         const marker = L.marker([o.lat, o.lng]).addTo(layer);
         const div = document.createElement('div');
+        div.className = 'obs-popup';
         div.innerHTML =
-          `<strong>${s.emoji} ${s.name_sl}</strong><br>` +
-          `<em>${s.name_lat || ''}</em><br>` +
-          `${fmtDate(o.created_at)} · ${o.quantity || 'količina ni podana'}<br>`;
+          `<div class="pop-head">` +
+          (s.image ? `<img class="pop-ref" src="${s.image}" alt="${s.name_sl}" />` : `<span class="pop-emoji">${s.emoji}</span>`) +
+          `<div><strong>${s.name_sl}</strong><br><em>${s.name_lat || ''}</em></div>` +
+          `</div>` +
+          `<div class="pop-meta">${fmtDate(o.created_at)} · ${o.quantity || 'količina ni podana'}</div>`;
         div.appendChild(badge(o.status, STATUS_LABELS[o.status]));
         if (o.photo) {
-          const img = document.createElement('img');
-          img.src = o.photo;
-          img.className = 'popup-photo';
-          img.alt = s.name_sl;
-          div.appendChild(img);
+          const fig = document.createElement('figure');
+          fig.className = 'pop-obs';
+          fig.innerHTML = `<img class="popup-photo" src="${o.photo}" alt="Fotografija opazovanja" /><figcaption>fotografija opazovanja</figcaption>`;
+          div.appendChild(fig);
         }
         marker.bindPopup(div);
       }

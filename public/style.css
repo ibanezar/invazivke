@@ -89,7 +89,7 @@ header .brand {
   color: #fff;
   white-space: nowrap;
 }
-header .brand img { height: 34px; width: auto; display: block; }
+header .brand img { height: 42px; width: auto; display: block; }
 header nav {
   display: flex;
   gap: 0.15rem;
@@ -371,7 +371,34 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .alert.error { background: var(--red-100); color: var(--red-700); border-color: color-mix(in srgb, var(--red-700) 30%, transparent); }
 
 .obs-photo { max-width: 100%; max-height: 300px; border-radius: var(--radius-sm); }
-.popup-photo { max-width: 220px; max-height: 160px; border-radius: 6px; display: block; margin-top: 0.4rem; }
+.popup-photo { max-width: 220px; max-height: 160px; border-radius: 6px; display: block; }
+
+/* pojavno okno na zemljevidu */
+.obs-popup { min-width: 210px; }
+.obs-popup .pop-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.35rem; }
+.obs-popup .pop-ref {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--green-100);
+}
+.obs-popup .pop-emoji {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  background: var(--green-50);
+  border-radius: 8px;
+}
+.obs-popup .pop-head strong { font-size: 0.98rem; }
+.obs-popup .pop-head em { color: var(--muted); font-size: 0.85rem; }
+.obs-popup .pop-meta { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.35rem; }
+.obs-popup .pop-obs { margin-top: 0.5rem; }
+.obs-popup .pop-obs figcaption { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
 
 /* ---------- tabele ---------- */
 table {
@@ -416,8 +443,7 @@ footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1
 @media (max-width: 640px) {
   :root { --header-h: 92px; }
   header { flex-direction: column; align-items: stretch; justify-content: center; gap: 0.25rem; }
-  header .brand { font-size: 1.1rem; }
-  header .brand img { height: 28px; }
+  header .brand img { height: 34px; }
   header nav { flex-wrap: nowrap; margin: 0 -1rem; padding: 0 1rem 0.2rem; }
 }
 
