@@ -22,7 +22,8 @@ npm start
 Aplikacija teče na <http://localhost:3000>.
 
 - Skrbniška plošča: <http://localhost:3000/admin.html>
-- Skrbniški žeton nastavi z okoljsko spremenljivko `ADMIN_TOKEN` (privzeto za razvoj: `invazivke-admin`).
+- Skrbniški račun ustvariš z `npm run add-admin -- <ime> <geslo>`; prijava vrne sejni žeton (velja 12 ur, gesla so shranjena s scrypt).
+- Dokler ni ustvarjen noben račun (prvi zagon), deluje zasilni statični žeton `ADMIN_TOKEN` (privzeto za razvoj: `invazivke-admin`); ko računi obstajajo, je veljaven le, če je `ADMIN_TOKEN` izrecno nastavljen v okolju.
 - Vrata spremeniš s `PORT`.
 
 Testi:
@@ -51,6 +52,8 @@ Shramba je izolirana v `db.js`; ob prvem zagonu se morebitna stara JSON shramba 
 | GET | `/api/export.csv` | Izvoz CSV (`?status=potrjeno\|vse&species=`); privzeto samo potrjena |
 | GET | `/api/export.geojson` | Izvoz GeoJSON FeatureCollection (isti filtri) |
 | GET | `/api/stats` | Števci opazovanj po vrstah, statusih in mesecih |
+| POST | `/api/admin/login` | Prijava skrbnika (`username`, `password`) → sejni žeton |
+| POST | `/api/admin/logout` | Odjava (razveljavi sejni žeton) |
 | PATCH | `/api/observations/:id/status` | Verifikacija (skrbnik; `status`, `status_note`) |
 | DELETE | `/api/observations/:id` | Izbris prijave (skrbnik) |
 
@@ -58,6 +61,6 @@ Skrbniške zahteve pošljejo žeton v glavi `X-Admin-Token`.
 
 ## Nadaljnji koraki
 
-- PostgreSQL + PostGIS za večje namestitve; prava avtentikacija skrbnikov (več uporabnikov, vloge).
+- PostgreSQL + PostGIS za večje namestitve; vloge skrbnikov (npr. pregledovalec/urednik).
 - E-poštno obveščanje prijaviteljev ob spremembi statusa.
 - Uskladitev izvoznih polj s standardom Darwin Core / [invazivke.si](https://www.invazivke.si) (Zavod za gozdove RS).
