@@ -26,8 +26,13 @@
   </header>
 
   <main>
-    <h1>Katalog invazivnih tujerodnih vrst</h1>
-    <p class="subtitle">Najpogostejše invazivne vrste v Sloveniji. Če vrsto opaziš v naravi, jo <a href="/prijava.html">prijavi</a>.</p>
+    <section class="hero">
+      <svg class="hero-leaf" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c5 3 7 8 4 13-2 3-6 4-9 2C4 15 5 8 12 3Z"/><path d="M7 18c2-4 4-7 8-10"/></svg>
+      <h1>Katalog invazivnih tujerodnih vrst</h1>
+      <p>Spoznaj najpogostejše invazivne vrste v Sloveniji – kako jih prepoznaš, s čim jih lahko zamenjaš in zakaj so problematične. Če vrsto opaziš v naravi, jo prijavi in pomagaj strokovnjakom.</p>
+      <a class="btn" href="/prijava.html" id="hero-report">Prijavi opazovanje</a>
+      <a class="btn ghost" href="/">Odpri zemljevid</a>
+    </section>
 
     <div class="toolbar">
       <select id="f-group">
@@ -58,6 +63,15 @@
         if (q && !(s.name_sl.toLowerCase().includes(q) || s.name_lat.toLowerCase().includes(q))) continue;
         const card = document.createElement('div');
         card.className = 'card';
+        if (s.image) {
+          card.insertAdjacentHTML(
+            'beforeend',
+            `<figure class="photo">
+               <img src="${s.image}" alt="${s.name_sl}" loading="lazy" width="800" height="600" />
+               <figcaption><a href="${s.image_source}" target="_blank" rel="noopener">© ${s.image_author} · ${s.image_license}</a></figcaption>
+             </figure>`
+          );
+        }
         const head = document.createElement('div');
         head.className = 'head';
         head.innerHTML = `<span class="emoji">${s.emoji}</span><div><h3>${s.name_sl}</h3><div class="lat">${s.name_lat}</div></div>`;
@@ -69,12 +83,15 @@
            <p><span class="label">Življenjski prostor:</span> ${s.habitat}</p>
            <p><span class="label">Podobne vrste:</span> ${s.similar}</p>
            <p><span class="label">Vpliv:</span> ${s.impact}</p>
-           <a class="btn" href="/prijava.html?vrsta=${s.id}">Prijavi opazovanje</a>`
+           <a class="btn" href="/prijava.html?vrsta=${s.id}">${icon('camera', 16)}Prijavi opazovanje</a>`
         );
         wrap.appendChild(card);
       }
       if (!wrap.children.length) wrap.innerHTML = '<p>Ni zadetkov.</p>';
     }
+
+    document.getElementById('hero-report').insertAdjacentHTML('afterbegin', icon('camera', 16));
+    document.querySelector('.hero .btn.ghost').insertAdjacentHTML('afterbegin', icon('map', 16));
 
     (async () => {
       all = await fetchSpecies();

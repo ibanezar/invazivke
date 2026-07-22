@@ -1,5 +1,5 @@
 // Service worker: predpomnjenje statičnih datotek za delo na terenu s slabim signalom.
-const CACHE = 'invazivke-v3';
+const CACHE = 'invazivke-v4';
 const STATIC = [
   '/',
   '/index.html',

@@ -31,7 +31,11 @@
 
     <div class="alert" id="queue-info" hidden></div>
     <div class="cards" id="cards"></div>
-    <p id="empty" hidden>S te naprave še ni bilo oddanih prijav. <a href="/prijava.html">Prijavi prvo opazovanje.</a></p>
+    <div id="empty" class="empty-state" hidden>
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <p>S te naprave še ni bilo oddanih prijav.</p>
+      <a class="btn" href="/prijava.html">Prijavi prvo opazovanje</a>
+    </div>
   </main>
 
   <script src="app.js"></script>
@@ -54,6 +58,7 @@
         document.getElementById('empty').hidden = false;
         return;
       }
+      // (prazno stanje ostane skrito, dokler imamo prijave)
 
       const [speciesList, all] = await Promise.all([
         fetchSpecies(),

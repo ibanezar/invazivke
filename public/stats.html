@@ -27,7 +27,9 @@
 
   <main>
     <h1>Statistika opazovanj</h1>
-    <p class="subtitle" id="total">Nalagam …</p>
+    <p class="subtitle">Pregled prijavljenih opazovanj po vrstah, statusih in času ter izvoz podatkov.</p>
+
+    <div class="stat-tiles" id="tiles"></div>
 
     <div class="two-col">
       <div>
@@ -59,8 +61,8 @@
         <option value="potrjeno">Samo potrjena</option>
         <option value="vse">Vsa opazovanja</option>
       </select>
-      <a class="btn" id="exp-csv" href="/api/export.csv">⬇ CSV (Excel)</a>
-      <a class="btn" id="exp-geojson" href="/api/export.geojson">⬇ GeoJSON (GIS)</a>
+      <a class="btn" id="exp-csv" href="/api/export.csv">CSV (Excel)</a>
+      <a class="btn" id="exp-geojson" href="/api/export.geojson">GeoJSON (GIS)</a>
     </div>
   </main>
 
@@ -88,7 +90,18 @@
       ]);
       const species = speciesById(speciesList);
 
-      document.getElementById('total').textContent = `Skupaj prijavljenih opazovanj: ${stats.total}`;
+      const tiles = [
+        ['leaf', stats.total, 'Vseh opazovanj', 'all'],
+        ['shield', stats.by_status.potrjeno || 0, 'Potrjenih', 'ok'],
+        ['pin', stats.by_status.neverificirano || 0, 'Čaka pregled', 'wait'],
+        ['chart', Object.keys(stats.by_species).length, 'Različnih vrst', 'sp'],
+      ];
+      document.getElementById('tiles').innerHTML = tiles
+        .map(([ic, n, label, cls]) => `<div class="tile ${cls}"><span class="tile-ico">${icon(ic, 22)}</span><span class="tile-n">${n}</span><span class="tile-l">${label}</span></div>`)
+        .join('');
+
+      document.getElementById('exp-csv').insertAdjacentHTML('afterbegin', icon('download', 16));
+      document.getElementById('exp-geojson').insertAdjacentHTML('afterbegin', icon('download', 16));
 
       fillRows(
         'by-species',
