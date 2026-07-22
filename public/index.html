@@ -32,6 +32,7 @@
     <div class="map-filters">
       <strong>Filtri</strong>
       <select id="f-species"><option value="">Vse vrste</option></select>
+      <label class="chk"><input type="checkbox" id="l-local" checked /> <span class="dot local"></span> Prijave (Invazivke)</label>
       <select id="f-status">
         <option value="potrjeno">Samo potrjena</option>
         <option value="">Vsa opazovanja</option>
@@ -40,6 +41,7 @@
       </select>
       <input type="date" id="f-from" title="Od datuma" />
       <input type="date" id="f-to" title="Do datuma" />
+      <label class="chk"><input type="checkbox" id="l-inat" checked /> <span class="dot inat"></span> iNaturalist (raziskovalno)</label>
       <span class="hint" id="f-count"></span>
     </div>
     <div id="map"></div>
@@ -55,10 +57,21 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
 
-    const layer = L.markerClusterGroup({ maxClusterRadius: 45 }).addTo(map);
+    const layer = L.markerClusterGroup({ maxClusterRadius: 45 });
+    const inatLayer = L.markerClusterGroup({ maxClusterRadius: 45 });
+    map.addLayer(layer);
+    map.addLayer(inatLayer);
     let species = {};
 
-    async function refresh() {
+    const inatIcon = L.divIcon({
+      className: 'inat-marker',
+      html: '<span></span>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8],
+    });
+
+    async function refreshLocal() {
       const params = new URLSearchParams();
       const sp = document.getElementById('f-species').value;
       const st = document.getElementById('f-status').value;
@@ -69,9 +82,10 @@
       if (from) params.set('from', from);
       if (to) params.set('to', to);
 
-      const res = await fetch('/api/observations?' + params);
-      const list = await res.json();
       layer.clearLayers();
+      if (!document.getElementById('l-local').checked) return 0;
+
+      const list = await fetch('/api/observations?' + params).then((r) => r.json());
       for (const o of list) {
         const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓' };
         const marker = L.marker([o.lat, o.lng]).addTo(layer);
@@ -92,7 +106,35 @@
         }
         marker.bindPopup(div);
       }
-      document.getElementById('f-count').textContent = `Prikazanih: ${list.length}`;
+      return list.length;
+    }
+
+    async function refreshInat() {
+      const sp = document.getElementById('f-species').value;
+      inatLayer.clearLayers();
+      if (!document.getElementById('l-inat').checked) return 0;
+
+      const list = await fetch('/api/inaturalist' + (sp ? '?species=' + sp : '')).then((r) => r.json());
+      for (const o of list) {
+        const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓', name_lat: '' };
+        const marker = L.marker([o.lat, o.lng], { icon: inatIcon }).addTo(inatLayer);
+        const div = document.createElement('div');
+        div.className = 'obs-popup';
+        div.innerHTML =
+          `<div class="pop-head">` +
+          (o.photo ? `<img class="pop-ref" src="${o.photo}" alt="${s.name_sl}" />` : `<span class="pop-emoji">${s.emoji}</span>`) +
+          `<div><strong>${s.name_sl}</strong><br><em>${s.name_lat || ''}</em></div>` +
+          `</div>` +
+          `<div class="pop-meta">${o.observed_on ? fmtDate(o.observed_on) : 'datum ni podan'}</div>` +
+          `<a class="pop-src" href="${o.uri}" target="_blank" rel="noopener">Vir: iNaturalist ↗</a>`;
+        marker.bindPopup(div);
+      }
+      return list.length;
+    }
+
+    async function refresh() {
+      const [local, inat] = await Promise.all([refreshLocal(), refreshInat()]);
+      document.getElementById('f-count').textContent = `Prikazanih: ${local} prijav + ${inat} iNaturalist`;
     }
 
     (async () => {
@@ -105,7 +147,7 @@
         opt.textContent = `${s.emoji} ${s.name_sl}`;
         sel.appendChild(opt);
       }
-      for (const id of ['f-species', 'f-status', 'f-from', 'f-to']) {
+      for (const id of ['f-species', 'f-status', 'f-from', 'f-to', 'l-local', 'l-inat']) {
         document.getElementById(id).addEventListener('change', refresh);
       }
       refresh();

@@ -11,6 +11,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'invazivke-admin';
 const DATA_DIR = path.join(__dirname, 'data');
 const SPECIES = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'species.json'), 'utf8'));
 const db = require('./db');
+const inaturalist = require('./inaturalist');
 
 const STATUSES = ['neverificirano', 'potrjeno', 'zavrnjeno', 'vec-podatkov'];
 const QUANTITIES = ['posamezen osebek', 'nekaj osebkov', 'večja skupina', 'obsežen sestoj'];
@@ -126,6 +127,14 @@ app.post('/api/observations', upload.single('photo'), aw(async (req, res) => {
 
   await db.insertObservation(obs);
   res.status(201).json({ id: obs.id, status: obs.status });
+}));
+
+// --- API: iNaturalist (raziskovalno potrjena opazovanja v Sloveniji) ---
+app.get('/api/inaturalist', aw(async (req, res) => {
+  let list = await inaturalist.getObservations(SPECIES);
+  if (req.query.species) list = list.filter((o) => o.species_id === req.query.species);
+  res.set('Cache-Control', 'public, max-age=1800');
+  res.json(list);
 }));
 
 // --- API: izvoz podatkov (privzeto samo potrjena opazovanja) ---
