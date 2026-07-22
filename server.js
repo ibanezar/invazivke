@@ -222,14 +222,27 @@ app.use((err, req, res, next) => {
   res.status(400).json({ error: msg });
 });
 
+// neujete napake (npr. iz ozadnjih povezav odjemalca baze) samo zabeležimo,
+// namesto da bi sesule proces in povzročile zanko ponovnih zagonov
+process.on('unhandledRejection', (err) => {
+  console.error('Neujeta zavrnitev:', err && err.message ? err.message : err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Neujeta izjema:', err && err.stack ? err.stack : err);
+});
+
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Invazivke tečejo na vratih ${PORT}`);
     // zasilni žeton izpišemo le v razvoju, ne v produkciji
     if (process.env.NODE_ENV !== 'production') {
       console.log(`Skrbniška plošča: http://localhost:${PORT}/admin.html (zasilni žeton: ${ADMIN_TOKEN})`);
     }
   });
+  db.ready
+    .then(() => console.log('Baza pripravljena.'))
+    .catch(() => {}); // napaka je že zabeležena v db.js
+  process.on('SIGTERM', () => server.close(() => process.exit(0)));
 }
 
 module.exports = app;
