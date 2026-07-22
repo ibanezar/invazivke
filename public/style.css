@@ -350,7 +350,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   max-width: 250px;
 }
 .map-filters strong { font-family: var(--font-display); font-size: 0.95rem; }
-.map-filters select, .map-filters input {
+.map-filters select, .map-filters input[type="date"] {
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -359,6 +359,30 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font: inherit;
   font-size: 0.9rem;
 }
+.map-filters .chk {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.map-filters .chk input { margin: 0; }
+.map-filters .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.map-filters .dot.local { background: #2d6a4f; }
+.map-filters .dot.inat { background: #d97706; }
+
+/* iNaturalist oznaka na zemljevidu */
+.inat-marker span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: #d97706;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.obs-popup .pop-src { display: inline-block; margin-top: 0.4rem; font-size: 0.82rem; color: var(--green-600); text-decoration: none; }
+.obs-popup .pop-src:hover { text-decoration: underline; }
 
 /* ---------- opozorila ---------- */
 .alert {
