@@ -5,14 +5,20 @@ const { createClient } = require('@libsql/client');
 const path = require('path');
 const fs = require('fs');
 
-let url = process.env.TURSO_DATABASE_URL;
-if (!url) {
+let url = (process.env.TURSO_DATABASE_URL || '').trim();
+if (url) {
+  // HTTP transport namesto websocketov: brez trajne povezave, ki bi ob
+  // prekinitvi lahko sprožila neujeto napako in sesula proces
+  url = url.replace(/^libsql:\/\//, 'https://').replace(/^wss:\/\//, 'https://');
+  console.log('Shramba: Turso (' + url.replace(/\/\/([^.]{4})[^.]*/, '//$1…') + ')');
+} else {
   const file = process.env.DB_FILE || path.join(__dirname, 'data', 'invazivke.db');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   url = 'file:' + file;
+  console.log('Shramba: lokalna datoteka (' + file + ')');
 }
 
-const db = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
+const db = createClient({ url, authToken: (process.env.TURSO_AUTH_TOKEN || '').trim() || undefined });
 
 const ready = (async () => {
   const stmts = [
@@ -52,6 +58,10 @@ const ready = (async () => {
   ];
   for (const sql of stmts) await db.execute(sql);
 })();
+
+ready.catch((err) => {
+  console.error('Baza ni dosegljiva ob zagonu:', err.message);
+});
 
 const rowToObj = (row) => (row ? { ...row } : null);
 
@@ -201,6 +211,7 @@ async function deleteSession(token) {
 }
 
 module.exports = {
+  ready,
   listObservations, insertObservation, getObservation, updateStatus, deleteObservation, stats,
   savePhoto, getPhoto,
   createAdmin, findAdmin, adminCount, verifyPassword, createSession, getSession, deleteSession, ROLES,
