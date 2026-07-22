@@ -10,21 +10,10 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'invazivke-admin';
 
 const DATA_DIR = path.join(__dirname, 'data');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
-const OBS_FILE = path.join(DATA_DIR, 'observations.json');
 const SPECIES = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'species.json'), 'utf8'));
+const db = require('./db');
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-if (!fs.existsSync(OBS_FILE)) fs.writeFileSync(OBS_FILE, '[]');
-
-// --- preprosta shramba v JSON datoteki (za MVP; kasneje PostgreSQL + PostGIS) ---
-function loadObservations() {
-  return JSON.parse(fs.readFileSync(OBS_FILE, 'utf8'));
-}
-function saveObservations(list) {
-  const tmp = OBS_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(list, null, 2));
-  fs.renameSync(tmp, OBS_FILE);
-}
 
 const STATUSES = ['neverificirano', 'potrjeno', 'zavrnjeno', 'vec-podatkov'];
 const QUANTITIES = ['posamezen osebek', 'nekaj osebkov', 'večja skupina', 'obsežen sestoj'];
@@ -67,20 +56,10 @@ app.get('/api/species', (req, res) => {
 
 // --- API: opazovanja ---
 app.get('/api/observations', (req, res) => {
-  let list = loadObservations();
-  const admin = isAdmin(req);
-  const { species, status, from, to } = req.query;
-
-  // javnost privzeto vidi vsa opazovanja s statusom; osebne podatke le skrbnik
-  if (status) list = list.filter((o) => o.status === status);
-  if (species) list = list.filter((o) => o.species_id === species);
-  if (from) list = list.filter((o) => o.created_at >= from);
-  if (to) list = list.filter((o) => o.created_at <= to + 'T23:59:59');
-
-  if (!admin) {
-    list = list.map(({ contact, ...pub }) => pub);
-  }
-  res.json(list.sort((a, b) => b.created_at.localeCompare(a.created_at)));
+  let list = db.listObservations(req.query);
+  // javnost vidi vsa opazovanja s statusom; osebne podatke le skrbnik
+  if (!isAdmin(req)) list = list.map(({ contact, ...pub }) => pub);
+  res.json(list);
 });
 
 app.post('/api/observations', upload.single('photo'), (req, res) => {
@@ -117,19 +96,17 @@ app.post('/api/observations', upload.single('photo'), (req, res) => {
     verified_at: null,
   };
 
-  const list = loadObservations();
-  list.push(obs);
-  saveObservations(list);
+  db.insertObservation(obs);
   res.status(201).json({ id: obs.id, status: obs.status });
 });
 
 // --- API: izvoz podatkov (privzeto samo potrjena opazovanja) ---
 function exportList(req) {
-  let list = loadObservations();
   const status = req.query.status || 'potrjeno';
-  if (status !== 'vse') list = list.filter((o) => o.status === status);
-  if (req.query.species) list = list.filter((o) => o.species_id === req.query.species);
-  return list.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return db.listObservations(
+    { status: status === 'vse' ? null : status, species: req.query.species },
+    'ASC'
+  );
 }
 
 const speciesMap = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
@@ -175,21 +152,7 @@ app.get('/api/export.geojson', (req, res) => {
 
 // --- API: statistika ---
 app.get('/api/stats', (req, res) => {
-  const list = loadObservations();
-  const by = (fn) => {
-    const acc = {};
-    for (const o of list) {
-      const k = fn(o);
-      acc[k] = (acc[k] || 0) + 1;
-    }
-    return acc;
-  };
-  res.json({
-    total: list.length,
-    by_status: by((o) => o.status),
-    by_species: by((o) => o.species_id),
-    by_month: by((o) => o.created_at.slice(0, 7)),
-  });
+  res.json(db.stats());
 });
 
 // --- API: verifikacija (skrbnik) ---
@@ -197,23 +160,14 @@ app.patch('/api/observations/:id/status', requireAdmin, (req, res) => {
   const { status, status_note } = req.body;
   if (!STATUSES.includes(status)) return res.status(400).json({ error: 'Neveljaven status.' });
 
-  const list = loadObservations();
-  const obs = list.find((o) => o.id === req.params.id);
+  const obs = db.updateStatus(req.params.id, status, (status_note || '').slice(0, 1000) || null);
   if (!obs) return res.status(404).json({ error: 'Opazovanje ne obstaja.' });
-
-  obs.status = status;
-  obs.status_note = (status_note || '').slice(0, 1000) || null;
-  obs.verified_at = new Date().toISOString();
-  saveObservations(list);
   res.json(obs);
 });
 
 app.delete('/api/observations/:id', requireAdmin, (req, res) => {
-  const list = loadObservations();
-  const idx = list.findIndex((o) => o.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Opazovanje ne obstaja.' });
-  const [obs] = list.splice(idx, 1);
-  saveObservations(list);
+  const obs = db.deleteObservation(req.params.id);
+  if (!obs) return res.status(404).json({ error: 'Opazovanje ne obstaja.' });
   if (obs.photo) fs.rm(path.join(UPLOAD_DIR, path.basename(obs.photo)), () => {});
   res.status(204).end();
 });

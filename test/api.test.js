@@ -5,10 +5,8 @@ const path = require('path');
 const os = require('os');
 
 process.env.UPLOAD_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'invazivke-up-'));
+process.env.DB_FILE = path.join(process.env.UPLOAD_DIR, 'test.db');
 process.env.ADMIN_TOKEN = 'test-token';
-
-const OBS_FILE = path.join(__dirname, '..', 'data', 'observations.json');
-let obsBackup = null;
 
 const app = require('../server');
 let server, base;
@@ -27,8 +25,6 @@ function postObservation(fields) {
 }
 
 before(async () => {
-  obsBackup = fs.existsSync(OBS_FILE) ? fs.readFileSync(OBS_FILE, 'utf8') : null;
-  fs.writeFileSync(OBS_FILE, '[]');
   server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   base = 'http://127.0.0.1:' + server.address().port;
@@ -36,7 +32,6 @@ before(async () => {
 
 after(() => {
   server.close();
-  if (obsBackup !== null) fs.writeFileSync(OBS_FILE, obsBackup);
   fs.rmSync(process.env.UPLOAD_DIR, { recursive: true, force: true });
 });
 
