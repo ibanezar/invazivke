@@ -91,6 +91,45 @@ test('javni seznam skrije kontakt, skrbniški ga vrne', async () => {
   assert.ok(adm.some((o) => o.contact === 'test@example.com'));
 });
 
+test('GET /api/stats vrne števce', async () => {
+  const res = await fetch(base + '/api/stats');
+  assert.strictEqual(res.status, 200);
+  const stats = await res.json();
+  assert.ok(stats.total >= 1);
+  assert.ok(stats.by_species['japonski-dresnik'] >= 1);
+  assert.ok(Object.keys(stats.by_month).length >= 1);
+});
+
+test('izvoz CSV vsebuje BOM, glavo in potrjena opazovanja', async () => {
+  const res = await fetch(base + '/api/export.csv?status=vse');
+  assert.strictEqual(res.status, 200);
+  assert.match(res.headers.get('content-type'), /text\/csv/);
+  const raw = Buffer.from(await res.arrayBuffer());
+  // res.text() bi BOM odstranil, zato preverimo surove bajte
+  assert.deepStrictEqual([...raw.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
+  const text = raw.toString('utf8').replace(/^\uFEFF/, '');
+  assert.match(text, /^id,znanstveno_ime,slovensko_ime/);
+  assert.match(text, /Fallopia japonica/);
+});
+
+test('izvoz GeoJSON vrne veljavno FeatureCollection s koordinatami [lng, lat]', async () => {
+  const res = await fetch(base + '/api/export.geojson?status=vse');
+  assert.strictEqual(res.status, 200);
+  const gj = await res.json();
+  assert.strictEqual(gj.type, 'FeatureCollection');
+  assert.ok(gj.features.length >= 1);
+  const f = gj.features[0];
+  assert.strictEqual(f.geometry.type, 'Point');
+  assert.strictEqual(f.geometry.coordinates[0], 14.51);
+  assert.strictEqual(f.geometry.coordinates[1], 46.05);
+  assert.strictEqual(f.properties.scientificName, 'Fallopia japonica');
+});
+
+test('privzeti izvoz vsebuje samo potrjena opazovanja', async () => {
+  const gj = await (await fetch(base + '/api/export.geojson')).json();
+  assert.ok(gj.features.every((f) => f.properties.status === 'potrjeno'));
+});
+
 test('verifikacija zahteva žeton in spremeni status', async () => {
   const [obs] = await (await fetch(base + '/api/observations')).json();
 

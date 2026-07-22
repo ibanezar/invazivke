@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invazivke – statistika in izvoz</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#1b4332" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">🌿 Invazivke</a>
+    <nav>
+      <a href="/">Zemljevid</a>
+      <a href="/katalog.html">Katalog vrst</a>
+      <a href="/prijava.html">Prijavi opazovanje</a>
+      <a href="/moje.html">Moje prijave</a>
+      <a href="/stats.html" class="active">Statistika</a>
+      <a href="/admin.html">Skrbništvo</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Statistika opazovanj</h1>
+    <p class="subtitle" id="total">Nalagam …</p>
+
+    <div class="two-col">
+      <div>
+        <h2 style="font-size:1.15rem;margin-bottom:0.5rem">Po vrstah</h2>
+        <table>
+          <thead><tr><th>Vrsta</th><th style="text-align:right">Opazovanj</th></tr></thead>
+          <tbody id="by-species"></tbody>
+        </table>
+      </div>
+      <div>
+        <h2 style="font-size:1.15rem;margin-bottom:0.5rem">Po statusu</h2>
+        <table>
+          <thead><tr><th>Status</th><th style="text-align:right">Opazovanj</th></tr></thead>
+          <tbody id="by-status"></tbody>
+        </table>
+
+        <h2 style="font-size:1.15rem;margin:1rem 0 0.5rem">Po mesecih</h2>
+        <table>
+          <thead><tr><th>Mesec</th><th style="text-align:right">Opazovanj</th></tr></thead>
+          <tbody id="by-month"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h2 style="font-size:1.15rem;margin:1.5rem 0 0.5rem">Izvoz podatkov</h2>
+    <p class="subtitle">Za uporabo v GIS orodjih (QGIS ipd.) ali preglednicah; podatki vključujejo znanstvena imena za združljivost s strokovnimi bazami (npr. invazivke.si).</p>
+    <div class="toolbar">
+      <select id="exp-status">
+        <option value="potrjeno">Samo potrjena</option>
+        <option value="vse">Vsa opazovanja</option>
+      </select>
+      <a class="btn" id="exp-csv" href="/api/export.csv">⬇ CSV (Excel)</a>
+      <a class="btn" id="exp-geojson" href="/api/export.geojson">⬇ GeoJSON (GIS)</a>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'avg', 'sep', 'okt', 'nov', 'dec'];
+
+    function fillRows(tbodyId, entries) {
+      const tbody = document.getElementById(tbodyId);
+      tbody.innerHTML = entries.length
+        ? entries.map(([label, n]) => `<tr><td>${label}</td><td style="text-align:right">${n}</td></tr>`).join('')
+        : '<tr><td colspan="2">Ni podatkov.</td></tr>';
+    }
+
+    document.getElementById('exp-status').addEventListener('change', (e) => {
+      const q = '?status=' + e.target.value;
+      document.getElementById('exp-csv').href = '/api/export.csv' + q;
+      document.getElementById('exp-geojson').href = '/api/export.geojson' + q;
+    });
+
+    (async () => {
+      const [speciesList, stats] = await Promise.all([
+        fetchSpecies(),
+        fetch('/api/stats').then((r) => r.json()),
+      ]);
+      const species = speciesById(speciesList);
+
+      document.getElementById('total').textContent = `Skupaj prijavljenih opazovanj: ${stats.total}`;
+
+      fillRows(
+        'by-species',
+        Object.entries(stats.by_species)
+          .sort((a, b) => b[1] - a[1])
+          .map(([id, n]) => [(species[id] ? `${species[id].emoji} ${species[id].name_sl}` : id), n])
+      );
+      fillRows(
+        'by-status',
+        Object.entries(stats.by_status).map(([st, n]) => [STATUS_LABELS[st] || st, n])
+      );
+      fillRows(
+        'by-month',
+        Object.entries(stats.by_month)
+          .sort((a, b) => b[0].localeCompare(a[0]))
+          .map(([ym, n]) => {
+            const [y, m] = ym.split('-');
+            return [`${MONTHS[+m - 1]} ${y}`, n];
+          })
+      );
+    })();
+  </script>
+</body>
+</html>
