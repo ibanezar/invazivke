@@ -32,28 +32,27 @@ Testi:
 npm test
 ```
 
-Za lokalni zagon je potreben **Node ≥ 22.5** (uporablja vgrajeni `node:sqlite`).
+Za lokalni zagon je potreben **Node ≥ 18**; lokalno gre baza v datoteko `data/invazivke.db`, fotografije pa v isto bazo.
 
-## Postavitev v splet (živa različica)
+## Postavitev v splet — brezplačno (Render Free + Turso)
 
-Aplikacija je Node/Express strežnik s SQLite bazo in nalaganjem slik, zato potrebuje gostitelja s **trajnim diskom** (ne serverless). Baza (`invazivke.db`) in naložene fotografije (`uploads/`) se shranjujejo na disk prek spremenljivk `DB_FILE` in `UPLOAD_DIR`.
+Vsi podatki (opazovanja, **fotografije**, skrbniki, seje) so v eni libSQL/SQLite bazi. V produkciji baza živi v **Turso** (brezplačni oblak, brez kartice), zato aplikacija ne potrebuje trajnega diska in teče na **Render Free**.
 
-### Render (najlažje – priporočeno)
-
-1. Potisni repozitorij na GitHub (že narejeno).
-2. Na <https://dashboard.render.com> izberi **New → Blueprint** in izberi ta repozitorij. Render prebere [`render.yaml`](render.yaml) in ustvari spletno storitev s 1 GB trajnim diskom (priklop na `/data`), regijo Frankfurt in naključnim `ADMIN_TOKEN`.
-3. Po prvi postavitvi ustvari skrbniški račun prek Render **Shell**:
+1. **Turso baza** — na <https://turso.tech> ustvari brezplačen račun (prijava z GitHubom) in novo bazo (regija `fra` – Frankfurt). Skopiraj:
+   - *Database URL* (oblika `libsql://…turso.io`)
+   - *Auth token* (gumb Create token)
+2. **Render** — na <https://dashboard.render.com> izberi **New → Blueprint** in ta repozitorij. Render prebere [`render.yaml`](render.yaml); ob uvozu vpiši `TURSO_DATABASE_URL` in `TURSO_AUTH_TOKEN` iz 1. koraka.
+3. Po ~2 minutah dobiš javni naslov oblike `https://invazivke.onrender.com`.
+4. **Prvi skrbnik** — prijavi se na `/admin.html` z zasilnim žetonom (vrednost `ADMIN_TOKEN` v Render → Environment), nato čim prej ustvari pravi račun. Ker Render Free nima lupine, račun ustvariš lokalno proti isti bazi:
    ```bash
-   npm run add-admin -- <ime> <geslo>
+   TURSO_DATABASE_URL=libsql://… TURSO_AUTH_TOKEN=… npm run add-admin -- <ime> <geslo>
    ```
-   ali se enkratno prijavi z zasilnim žetonom (vrednost `ADMIN_TOKEN` iz zavihka Environment).
-4. Dobiš javni naslov oblike `https://invazivke.onrender.com`.
 
-> Trajni disk je na Render na voljo od paketa **Starter** naprej (Free nima diska – tam bi se baza in slike ob vsaki postavitvi izgubile).
+> Render Free storitev po neaktivnosti zaspi; prvi obisk jo zbudi (\~30 s). Podatki so varni v Turso ne glede na to.
 
 ### Docker (Fly.io, Railway, VPS …)
 
-V repozitoriju je [`Dockerfile`](Dockerfile). Priklopi volumen na `/data` za trajnost:
+V repozitoriju je [`Dockerfile`](Dockerfile). Brez Turso spremenljivk gre baza v lokalno datoteko — za trajnost priklopi volumen na `/data` ali nastavi `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`:
 
 ```bash
 docker build -t invazivke .
@@ -68,9 +67,9 @@ Zdravstvena točka za nadzor gostitelja: `GET /healthz`.
 |---|---|
 | Frontend | Statični HTML/CSS/JS (brez build koraka), Leaflet.js + OpenStreetMap |
 | Backend | Node.js + Express, Multer za nalaganje slik |
-| Shramba | SQLite (vgrajeni `node:sqlite`, datoteka `data/invazivke.db`) + `uploads/` za slike |
+| Shramba | libSQL/SQLite (`@libsql/client`): lokalno datoteka, v produkciji Turso; fotografije opazovanj so v bazi (tabela `photos`) |
 
-Shramba je izolirana v `db.js`; ob prvem zagonu se morebitna stara JSON shramba (`data/observations.json`) samodejno migrira v SQLite. Pot do baze nastaviš z `DB_FILE`. Za večje namestitve je `db.js` edina datoteka, ki jo je treba prilagoditi za PostgreSQL + PostGIS.
+Shramba je izolirana v `db.js`. Lokalno pot do baze nastaviš z `DB_FILE`, produkcijsko bazo pa s `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`. Ker so fotografije v bazi, aplikacija ne potrebuje trajnega diska. Za večje namestitve je `db.js` edina datoteka, ki jo je treba prilagoditi za PostgreSQL + PostGIS.
 
 ### API
 
@@ -82,6 +81,7 @@ Shramba je izolirana v `db.js`; ob prvem zagonu se morebitna stara JSON shramba 
 | GET | `/api/export.csv` | Izvoz CSV (`?status=potrjeno\|vse&species=`); privzeto samo potrjena |
 | GET | `/api/export.geojson` | Izvoz GeoJSON FeatureCollection (isti filtri) |
 | GET | `/api/stats` | Števci opazovanj po vrstah, statusih in mesecih |
+| GET | `/photos/:id` | Fotografija opazovanja (strežena iz baze) |
 | POST | `/api/admin/login` | Prijava skrbnika (`username`, `password`) → sejni žeton |
 | POST | `/api/admin/logout` | Odjava (razveljavi sejni žeton) |
 | PATCH | `/api/observations/:id/status` | Verifikacija (skrbnik; `status`, `status_note`) |

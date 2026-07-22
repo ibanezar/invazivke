@@ -1,11 +1,17 @@
-# Render Blueprint za Invazivke.
-# Postavitev: na https://dashboard.render.com > New > Blueprint, izberi ta repozitorij.
-# Render prebere to datoteko in ustvari spletno storitev s trajnim diskom.
+# Render Blueprint za Invazivke — brezplačna postavitev.
+# Podatki (opazovanja, fotografije, skrbniki) živijo v Turso (libSQL oblak,
+# brezplačni paket), zato trajni disk ni potreben in zadošča Render Free.
+#
+# Postavitev:
+#  1. Na https://turso.tech ustvari brezplačen račun in bazo; skopiraj
+#     "Database URL" (libsql://...) in ustvari auth token.
+#  2. Na https://dashboard.render.com > New > Blueprint izberi ta repozitorij.
+#  3. Ob uvozu vpiši TURSO_DATABASE_URL in TURSO_AUTH_TOKEN.
 services:
   - type: web
     name: invazivke
     runtime: node
-    plan: starter          # trajni disk zahteva plačljiv paket (Free nima diska)
+    plan: free
     region: frankfurt      # najbližja Sloveniji
     buildCommand: npm ci
     startCommand: npm start
@@ -14,13 +20,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DB_FILE
-        value: /data/invazivke.db
-      - key: UPLOAD_DIR
-        value: /data/uploads
+      - key: TURSO_DATABASE_URL
+        sync: false          # vpišeš ob postavitvi (libsql://...)
+      - key: TURSO_AUTH_TOKEN
+        sync: false          # vpišeš ob postavitvi
       - key: ADMIN_TOKEN
-        generateValue: true   # naključni zasilni žeton (prvi skrbnik ga uporabi za vstop)
-    disk:
-      name: invazivke-data
-      mountPath: /data        # tu živita baza in naložene fotografije (preživita ponovne postavitve)
-      sizeGB: 1
+        generateValue: true  # naključni zasilni žeton za prvo prijavo
