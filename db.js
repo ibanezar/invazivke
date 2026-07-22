@@ -29,6 +29,7 @@ db.exec(`
     id         TEXT PRIMARY KEY,
     username   TEXT NOT NULL UNIQUE,
     pass_hash  TEXT NOT NULL,
+    role       TEXT NOT NULL DEFAULT 'urednik',
     created_at TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS sessions (
@@ -37,6 +38,11 @@ db.exec(`
     expires_at TEXT NOT NULL
   );
 `);
+
+// migracija za obstoječe baze pred uvedbo vlog
+if (!db.prepare("SELECT 1 FROM pragma_table_info('admins') WHERE name = 'role'").get()) {
+  db.exec("ALTER TABLE admins ADD COLUMN role TEXT NOT NULL DEFAULT 'urednik'");
+}
 
 // enkratna migracija iz stare JSON shrambe
 const legacyFile = path.join(__dirname, 'data', 'observations.json');
@@ -119,9 +125,12 @@ function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(candidate, Buffer.from(hash, 'hex'));
 }
 
-function createAdmin(username, password) {
-  db.prepare('INSERT INTO admins (id, username, pass_hash, created_at) VALUES (?, ?, ?, ?)').run(
-    crypto.randomUUID(), username, hashPassword(password), new Date().toISOString()
+const ROLES = ['urednik', 'pregledovalec'];
+
+function createAdmin(username, password, role = 'urednik') {
+  if (!ROLES.includes(role)) throw new Error('Neveljavna vloga (urednik ali pregledovalec).');
+  db.prepare('INSERT INTO admins (id, username, pass_hash, role, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    crypto.randomUUID(), username, hashPassword(password), role, new Date().toISOString()
   );
 }
 
@@ -144,7 +153,13 @@ function createSession(adminId) {
 }
 
 function getSession(token) {
-  const s = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+  const s = db
+    .prepare(
+      `SELECT s.*, a.username, a.role
+       FROM sessions s JOIN admins a ON a.id = s.admin_id
+       WHERE s.token = ?`
+    )
+    .get(token);
   return s && s.expires_at > new Date().toISOString() ? s : null;
 }
 
@@ -154,5 +169,5 @@ function deleteSession(token) {
 
 module.exports = {
   listObservations, insertObservation, getObservation, updateStatus, deleteObservation, stats,
-  createAdmin, findAdmin, adminCount, verifyPassword, createSession, getSession, deleteSession,
+  createAdmin, findAdmin, adminCount, verifyPassword, createSession, getSession, deleteSession, ROLES,
 };

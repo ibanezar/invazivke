@@ -45,7 +45,8 @@
           <option value="">Vsa</option>
         </select>
         <span class="hint" id="count"></span>
-        <button class="secondary" id="btn-logout" style="margin-left:auto">Odjava</button>
+        <span class="hint" id="role-info" style="margin-left:auto"></span>
+        <button class="secondary" id="btn-logout">Odjava</button>
       </div>
       <div style="overflow-x:auto">
         <table>
@@ -61,6 +62,7 @@
   <script src="app.js"></script>
   <script>
     let species = {};
+    let myRole = 'urednik';
     const tokenKey = 'invazivke-admin-token';
     const getToken = () => sessionStorage.getItem(tokenKey) || '';
 
@@ -114,6 +116,12 @@
         tr.appendChild(tdStatus);
 
         const tdActions = document.createElement('td');
+        if (myRole !== 'urednik') {
+          tdActions.innerHTML = '<span class="hint">samo pregled</span>';
+          tr.appendChild(tdActions);
+          tbody.appendChild(tr);
+          continue;
+        }
         const actions = [
           ['potrjeno', 'Potrdi', ''],
           ['zavrnjeno', 'Zavrni', 'danger'],
@@ -163,6 +171,9 @@
         sessionStorage.removeItem(tokenKey);
         return false;
       }
+      myRole = (await res.json()).role || 'urednik';
+      document.getElementById('role-info').textContent =
+        myRole === 'urednik' ? 'Vloga: urednik (verifikacija in brisanje)' : 'Vloga: pregledovalec (samo pregled)';
       document.getElementById('login').hidden = true;
       document.getElementById('panel').hidden = false;
       refresh();
