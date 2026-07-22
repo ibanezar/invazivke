@@ -35,7 +35,7 @@
       <div>
         <h2 style="font-size:1.15rem;margin-bottom:0.5rem">Po vrstah</h2>
         <table>
-          <thead><tr><th>Vrsta</th><th style="text-align:right">Opazovanj</th></tr></thead>
+          <thead><tr><th>Vrsta</th><th style="text-align:right">Prijave</th><th style="text-align:right">iNaturalist</th></tr></thead>
           <tbody id="by-species"></tbody>
         </table>
       </div>
@@ -61,6 +61,10 @@
         <option value="potrjeno">Samo potrjena</option>
         <option value="vse">Vsa opazovanja</option>
       </select>
+      <select id="exp-vir">
+        <option value="invazivke">Samo prijave</option>
+        <option value="vse">+ iNaturalist</option>
+      </select>
       <a class="btn" id="exp-csv" href="/api/export.csv">CSV (Excel)</a>
       <a class="btn" id="exp-geojson" href="/api/export.geojson">GeoJSON (GIS)</a>
     </div>
@@ -77,24 +81,30 @@
         : '<tr><td colspan="2">Ni podatkov.</td></tr>';
     }
 
-    document.getElementById('exp-status').addEventListener('change', (e) => {
-      const q = '?status=' + e.target.value;
+    function updateExportLinks() {
+      const q = '?status=' + document.getElementById('exp-status').value +
+        (document.getElementById('exp-vir').value === 'vse' ? '&vir=vse' : '');
       document.getElementById('exp-csv').href = '/api/export.csv' + q;
       document.getElementById('exp-geojson').href = '/api/export.geojson' + q;
-    });
+    }
+    document.getElementById('exp-status').addEventListener('change', updateExportLinks);
+    document.getElementById('exp-vir').addEventListener('change', updateExportLinks);
 
     (async () => {
-      const [speciesList, stats] = await Promise.all([
+      const [speciesList, stats, inat] = await Promise.all([
         fetchSpecies(),
         fetch('/api/stats').then((r) => r.json()),
+        fetch('/api/inaturalist').then((r) => r.json()).catch(() => []),
       ]);
       const species = speciesById(speciesList);
+      const inatBySpecies = {};
+      for (const o of inat) inatBySpecies[o.species_id] = (inatBySpecies[o.species_id] || 0) + 1;
 
       const tiles = [
-        ['leaf', stats.total, 'Vseh opazovanj', 'all'],
+        ['leaf', stats.total, 'Vseh prijav', 'all'],
         ['shield', stats.by_status.potrjeno || 0, 'Potrjenih', 'ok'],
         ['pin', stats.by_status.neverificirano || 0, 'Čaka pregled', 'wait'],
-        ['chart', Object.keys(stats.by_species).length, 'Različnih vrst', 'sp'],
+        ['map', inat.length, 'iNaturalist (SI)', 'inat'],
       ];
       document.getElementById('tiles').innerHTML = tiles
         .map(([ic, n, label, cls]) => `<div class="tile ${cls}"><span class="tile-ico">${icon(ic, 22)}</span><span class="tile-n">${n}</span><span class="tile-l">${label}</span></div>`)
@@ -103,12 +113,16 @@
       document.getElementById('exp-csv').insertAdjacentHTML('afterbegin', icon('download', 16));
       document.getElementById('exp-geojson').insertAdjacentHTML('afterbegin', icon('download', 16));
 
-      fillRows(
-        'by-species',
-        Object.entries(stats.by_species)
-          .sort((a, b) => b[1] - a[1])
-          .map(([id, n]) => [(species[id] ? `${species[id].emoji} ${species[id].name_sl}` : id), n])
-      );
+      // po vrstah: prijave in iNaturalist v ločenih stolpcih
+      const allIds = [...new Set([...Object.keys(stats.by_species), ...Object.keys(inatBySpecies)])];
+      const speciesRows = allIds
+        .map((id) => [id, stats.by_species[id] || 0, inatBySpecies[id] || 0])
+        .sort((a, b) => (b[1] + b[2]) - (a[1] + a[2]));
+      document.getElementById('by-species').innerHTML = speciesRows.length
+        ? speciesRows.map(([id, n, ni]) =>
+            `<tr><td>${species[id] ? `${species[id].emoji} ${species[id].name_sl}` : id}</td>` +
+            `<td style="text-align:right">${n}</td><td style="text-align:right">${ni}</td></tr>`).join('')
+        : '<tr><td colspan="3">Ni podatkov.</td></tr>';
       fillRows(
         'by-status',
         Object.entries(stats.by_status).map(([st, n]) => [STATUS_LABELS[st] || st, n])

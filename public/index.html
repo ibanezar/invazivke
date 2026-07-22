@@ -111,10 +111,14 @@
 
     async function refreshInat() {
       const sp = document.getElementById('f-species').value;
+      const from = document.getElementById('f-from').value;
+      const to = document.getElementById('f-to').value;
       inatLayer.clearLayers();
       if (!document.getElementById('l-inat').checked) return 0;
 
-      const list = await fetch('/api/inaturalist' + (sp ? '?species=' + sp : '')).then((r) => r.json());
+      let list = await fetch('/api/inaturalist' + (sp ? '?species=' + sp : '')).then((r) => r.json());
+      if (from) list = list.filter((o) => o.observed_on && o.observed_on >= from);
+      if (to) list = list.filter((o) => o.observed_on && o.observed_on <= to);
       for (const o of list) {
         const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓', name_lat: '' };
         const marker = L.marker([o.lat, o.lng], { icon: inatIcon }).addTo(inatLayer);
