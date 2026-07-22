@@ -111,6 +111,39 @@ header nav a {
 header nav a:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 header nav a.active { background: var(--green-600); color: #fff; }
 
+.ico { vertical-align: -3px; flex: none; }
+header nav a { display: inline-flex; align-items: center; gap: 0.4rem; }
+header nav a .ico { opacity: 0.85; }
+button .ico, .btn .ico { margin-right: 0.45rem; vertical-align: -3px; }
+
+/* ---------- hero pasica ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, var(--green-800), var(--green-600));
+  color: #fff;
+  border-radius: var(--radius);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+.hero h1 { color: #fff; margin-bottom: 0.4rem; }
+.hero p { color: var(--green-100); max-width: 58ch; margin-bottom: 1.1rem; }
+.hero .btn { background: #fff; color: var(--green-800); }
+.hero .btn:hover { background: var(--green-100); }
+.hero .btn.ghost { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, 0.55); margin-left: 0.5rem; }
+.hero .btn.ghost:hover { background: rgba(255, 255, 255, 0.12); }
+.hero .hero-leaf {
+  position: absolute;
+  right: -30px;
+  bottom: -50px;
+  width: 260px;
+  height: 260px;
+  opacity: 0.14;
+  pointer-events: none;
+}
+@media (max-width: 640px) { .hero .hero-leaf { width: 180px; height: 180px; } }
+
 /* ---------- postavitev ---------- */
 main { max-width: 1100px; margin: 0 auto; padding: clamp(1rem, 3vw, 2rem) 1rem 2.5rem; }
 main.full { max-width: none; padding: 0; }
@@ -143,6 +176,41 @@ h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em
   box-shadow: var(--shadow-sm);
 }
 
+/* ---------- statistične ploščice ---------- */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+.tile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  box-shadow: var(--shadow-sm);
+}
+.tile-ico {
+  grid-row: 1 / 3;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--green-50);
+  color: var(--green-700);
+}
+.tile.ok .tile-ico { background: var(--green-100); color: var(--green-800); }
+.tile.wait .tile-ico { background: var(--amber-100); color: var(--amber-700); }
+.tile.sp .tile-ico { background: var(--violet-100); color: var(--violet-700); }
+.tile-n { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; line-height: 1.1; }
+.tile-l { color: var(--muted); font-size: 0.85rem; }
+
 /* ---------- kartice ---------- */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.1rem; }
 .card {
@@ -157,6 +225,27 @@ h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.card .photo {
+  position: relative;
+  margin: -1.15rem -1.15rem 0.35rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--green-50);
+}
+.card .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .photo figcaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 0.15rem 0.5rem;
+  background: rgba(18, 41, 29, 0.55);
+  border-top-left-radius: 8px;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+.card .photo figcaption a { color: #e6efe9; text-decoration: none; }
+.card .photo figcaption a:hover { text-decoration: underline; }
 .card .head { display: flex; align-items: center; gap: 0.7rem; }
 .card .emoji {
   font-size: 1.6rem;
@@ -309,6 +398,18 @@ th {
 
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+.empty-state svg { color: var(--green-500); opacity: 0.7; }
+.empty-state .btn { color: #fff; }
 
 footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1.75rem 1rem; }
 

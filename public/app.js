@@ -67,6 +67,39 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
 
+// --- ikone (inline SVG, stroke 2, 24x24) ---
+const ICONS = {
+  map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>',
+  leaf: '<path d="M12 3c5 3 7 8 4 13-2 3-6 4-9 2C4 15 5 8 12 3Z"/><path d="M7 18c2-4 4-7 8-10"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4V8Z"/><circle cx="12" cy="13" r="3.5"/>',
+  pin: '<path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-8M4 20h17"/>',
+  shield: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  gps: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/>',
+  download: '<path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/>',
+};
+
+function icon(name, size = 18) {
+  return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+
+// ikone v glavni navigaciji (glede na cilj povezave)
+const NAV_ICONS = {
+  '/': 'map',
+  '/katalog.html': 'leaf',
+  '/prijava.html': 'camera',
+  '/moje.html': 'pin',
+  '/stats.html': 'chart',
+  '/admin.html': 'shield',
+};
+document.addEventListener('DOMContentLoaded', () => {
+  for (const a of document.querySelectorAll('header nav a')) {
+    const name = NAV_ICONS[a.getAttribute('href')];
+    if (name) a.insertAdjacentHTML('afterbegin', icon(name, 16));
+  }
+});
+
 // --- Moje prijave: ID-ji oddanih opazovanj v localStorage ---
 const MY_KEY = 'invazivke-moje';
 

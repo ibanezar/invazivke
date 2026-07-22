@@ -4,7 +4,7 @@ Spletna aplikacija za sporočanje opazovanj invazivnih tujerodnih vrst v Sloveni
 
 ## Funkcionalnosti
 
-- **Katalog vrst** – 17 najpogostejših invazivnih vrst v Sloveniji (rastline, živali, glive) z opisi, podobnimi domačimi vrstami in vplivom na okolje; filtriranje po skupini in iskanje.
+- **Katalog vrst** – 17 najpogostejših invazivnih vrst v Sloveniji (rastline, živali, glive) s **fotografijami**, opisi, podobnimi domačimi vrstami in vplivom na okolje; filtriranje po skupini in iskanje.
 - **Prijava opazovanja** – zajem GPS lokacije telefona ali izbira točke na zemljevidu, obvezna fotografija (samodejno pomanjšanje slike na napravi pred nalaganjem), ocena količine, opomba in neobvezen kontakt.
 - **Interaktivni zemljevid** – Leaflet + OpenStreetMap prikaz opazovanj po Sloveniji s filtri po vrsti, statusu in datumu. Privzeto so prikazana samo potrjena opazovanja.
 - **Skrbniška plošča** – strokovnjak pregleda prijavo (fotografijo, lokacijo, opombo) in jo označi kot *Potrjeno*, *Zavrnjeno* ali *Potrebuje več podatkov*. Kontaktni podatki prijaviteljev so vidni samo skrbniku. Podpira vloge (urednik/pregledovalec).
@@ -58,6 +58,16 @@ Shramba je izolirana v `db.js`; ob prvem zagonu se morebitna stara JSON shramba 
 | DELETE | `/api/observations/:id` | Izbris prijave (skrbnik) |
 
 Skrbniške zahteve pošljejo žeton v glavi `X-Admin-Token`.
+
+## Fotografije vrst
+
+Fotografije v katalogu so proste slike z Wikimedia Commons; ob vsaki je naveden avtor in licenca (vidno na kartici, povezava na izvor). Prenese jih skripta:
+
+```bash
+npm run fetch-photos
+```
+
+Skripta za vsako vrsto poišče naslovno sliko članka na Wikipediji, jo shrani v `public/img/species/` in v `data/species.json` zapiše `image`, `image_author`, `image_license` in `image_source`. Slike so pomanjšane na 800×600 za hitro nalaganje na terenu.
 
 ## Nadaljnji koraki
 

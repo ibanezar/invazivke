@@ -76,7 +76,7 @@
         <div>
           <div class="field">
             <label>Lokacija *</label>
-            <button type="button" class="secondary" id="btn-gps">📍 Uporabi mojo GPS lokacijo</button>
+            <button type="button" class="secondary" id="btn-gps">Uporabi mojo GPS lokacijo</button>
             <p class="hint">Ali klikni točko na zemljevidu.</p>
             <div id="pick-map"></div>
             <p class="hint" id="coords">Lokacija še ni izbrana.</p>
@@ -136,7 +136,7 @@
       if (!file) return showAlert(alertEl, 'error', 'Priloži fotografijo opazovanja.');
 
       btn.disabled = true;
-      btn.textContent = 'Pošiljam …';
+      btn.innerHTML = icon('camera', 16) + 'Pošiljam …';
       try {
         const compressed = await compressImage(file);
         const fields = {
@@ -170,7 +170,7 @@
         showAlert(alertEl, 'error', err.message);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Oddaj prijavo';
+        btn.innerHTML = icon('camera', 16) + 'Oddaj prijavo';
       }
     });
 
@@ -191,6 +191,9 @@
       } catch {}
     }
     window.addEventListener('online', flushAndNotify);
+
+    document.getElementById('btn-gps').insertAdjacentHTML('afterbegin', icon('gps', 16));
+    document.getElementById('btn-submit').insertAdjacentHTML('afterbegin', icon('camera', 16));
 
     (async () => {
       flushAndNotify();
