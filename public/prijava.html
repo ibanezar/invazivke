@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invazivke – prijavi opazovanje</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">🌿 Invazivke</a>
+    <nav>
+      <a href="/">Zemljevid</a>
+      <a href="/katalog.html">Katalog vrst</a>
+      <a href="/prijava.html" class="active">Prijavi opazovanje</a>
+      <a href="/admin.html">Skrbništvo</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Prijavi opazovanje</h1>
+    <p class="subtitle">Fotografija in točna lokacija sta ključni, da lahko strokovnjak opazovanje potrdi.</p>
+
+    <div class="alert" id="alert" hidden></div>
+
+    <form id="form">
+      <div class="two-col">
+        <div>
+          <div class="field">
+            <label for="species">Vrsta *</label>
+            <select id="species" required>
+              <option value="">– izberi vrsto –</option>
+            </select>
+            <p class="hint">Nisi prepričan/a? Preveri <a href="/katalog.html" target="_blank">katalog vrst</a>.</p>
+          </div>
+
+          <div class="field">
+            <label for="photo">Fotografija *</label>
+            <input type="file" id="photo" accept="image/*" capture="environment" required />
+            <p class="hint">Slika se pred nalaganjem samodejno pomanjša (prijazno do mobilnih podatkov).</p>
+            <img id="preview" class="obs-photo" hidden alt="Predogled fotografije" />
+          </div>
+
+          <div class="field">
+            <label for="quantity">Ocena količine</label>
+            <select id="quantity">
+              <option value="">– ni podatka –</option>
+              <option>posamezen osebek</option>
+              <option>nekaj osebkov</option>
+              <option>večja skupina</option>
+              <option>obsežen sestoj</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="note">Opomba</label>
+            <textarea id="note" maxlength="1000" placeholder="Npr. sestoj ob potoku, dolžina okoli 20 m …"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="contact">Kontakt (neobvezno)</label>
+            <input type="text" id="contact" maxlength="200" placeholder="E-pošta, če želiš povratno informacijo" />
+            <p class="hint">Kontakt vidi le skrbnik, ne javnost.</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="field">
+            <label>Lokacija *</label>
+            <button type="button" class="secondary" id="btn-gps">📍 Uporabi mojo GPS lokacijo</button>
+            <p class="hint">Ali klikni točko na zemljevidu.</p>
+            <div id="pick-map"></div>
+            <p class="hint" id="coords">Lokacija še ni izbrana.</p>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" id="btn-submit">Oddaj prijavo</button>
+    </form>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let lat = null, lng = null, marker = null;
+
+    const map = L.map('pick-map').setView(SI_CENTER, 8);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    function setLocation(la, ln, zoomTo) {
+      lat = la; lng = ln;
+      if (marker) marker.setLatLng([la, ln]);
+      else marker = L.marker([la, ln]).addTo(map);
+      if (zoomTo) map.setView([la, ln], Math.max(map.getZoom(), 15));
+      document.getElementById('coords').textContent = `Izbrano: ${la.toFixed(5)}, ${ln.toFixed(5)}`;
+    }
+
+    map.on('click', (e) => setLocation(e.latlng.lat, e.latlng.lng, false));
+
+    document.getElementById('btn-gps').addEventListener('click', () => {
+      const alertEl = document.getElementById('alert');
+      if (!navigator.geolocation) return showAlert(alertEl, 'error', 'Brskalnik ne podpira geolokacije.');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation(pos.coords.latitude, pos.coords.longitude, true),
+        () => showAlert(alertEl, 'error', 'Lokacije ni bilo mogoče pridobiti. Dovoli dostop do lokacije ali izberi točko na zemljevidu.'),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+
+    document.getElementById('photo').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const img = document.getElementById('preview');
+      if (file) { img.src = URL.createObjectURL(file); img.hidden = false; }
+      else img.hidden = true;
+    });
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertEl = document.getElementById('alert');
+      const btn = document.getElementById('btn-submit');
+
+      if (lat == null) return showAlert(alertEl, 'error', 'Izberi lokacijo opazovanja (GPS ali klik na zemljevid).');
+      const file = document.getElementById('photo').files[0];
+      if (!file) return showAlert(alertEl, 'error', 'Priloži fotografijo opazovanja.');
+
+      btn.disabled = true;
+      btn.textContent = 'Pošiljam …';
+      try {
+        const compressed = await compressImage(file);
+        const fd = new FormData();
+        fd.set('species_id', document.getElementById('species').value);
+        fd.set('lat', lat);
+        fd.set('lng', lng);
+        fd.set('quantity', document.getElementById('quantity').value);
+        fd.set('note', document.getElementById('note').value);
+        fd.set('contact', document.getElementById('contact').value);
+        fd.set('photo', compressed, compressed.name || 'foto.jpg');
+
+        const res = await fetch('/api/observations', { method: 'POST', body: fd });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'Napaka pri oddaji.');
+
+        showAlert(alertEl, 'success', 'Hvala! Opazovanje je oddano in čaka na pregled strokovnjaka.');
+        e.target.reset();
+        document.getElementById('preview').hidden = true;
+        if (marker) { map.removeLayer(marker); marker = null; }
+        lat = lng = null;
+        document.getElementById('coords').textContent = 'Lokacija še ni izbrana.';
+      } catch (err) {
+        showAlert(alertEl, 'error', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Oddaj prijavo';
+      }
+    });
+
+    (async () => {
+      const list = await fetchSpecies();
+      const sel = document.getElementById('species');
+      for (const s of list) {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.emoji} ${s.name_sl} (${s.name_lat})`;
+        sel.appendChild(opt);
+      }
+      const pre = new URLSearchParams(location.search).get('vrsta');
+      if (pre) sel.value = pre;
+    })();
+  </script>
+</body>
+</html>

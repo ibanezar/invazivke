@@ -1,0 +1,189 @@
+[
+  {
+    "id": "japonski-dresnik",
+    "name_sl": "Japonski dresnik",
+    "name_lat": "Fallopia japonica",
+    "group": "rastlina",
+    "habitat": "obrežja rek, ceste, nasipi, opuščene površine",
+    "emoji": "🌿",
+    "description": "Do 3 m visoka zelnata trajnica z votlimi, bambusu podobnimi stebli in širokimi jajčastimi listi. Razrašča se z močnimi korenikami in tvori goste sestoje, ki izpodrinejo domače rastline ter poškodujejo infrastrukturo.",
+    "similar": "Sahalinski dresnik (večji listi, srčasta baza), češki dresnik (križanec)",
+    "impact": "Izpodriva obrežno vegetacijo, povečuje erozijo brežin, poškoduje temelje in asfalt. Odstranjevanje je zelo drago."
+  },
+  {
+    "id": "orjaski-dezen",
+    "name_sl": "Orjaški dežen",
+    "name_lat": "Heracleum mantegazzianum",
+    "group": "rastlina",
+    "habitat": "travniki, obrežja, gozdni robovi",
+    "emoji": "🌱",
+    "description": "Do 4 m visoka kobulnica z velikimi deljenimi listi in belimi kobuli premera do 50 cm. Sok rastline v kombinaciji s sončno svetlobo povzroča hude opekline kože.",
+    "similar": "Navadni dežen (bistveno manjši, do 1,5 m)",
+    "impact": "Nevaren za zdravje ljudi (fototoksičen sok), tvori goste sestoje in izpodriva domače vrste."
+  },
+  {
+    "id": "ambrozija",
+    "name_sl": "Pelinolistna ambrozija (žvrklja)",
+    "name_lat": "Ambrosia artemisiifolia",
+    "group": "rastlina",
+    "habitat": "njive, gradbišča, ceste, železnice, opuščene površine",
+    "emoji": "🌾",
+    "description": "Enoletnica z izrazito deljenimi, pernato razrezanimi listi, ki so na obeh straneh zeleni. Cveti od julija do oktobra; cvetni prah je močan alergen. Zatiranje je v Sloveniji zakonsko obvezno.",
+    "similar": "Navadni pelin (listi spodaj srebrno dlakavi)",
+    "impact": "Eden najmočnejših povzročiteljev senenega nahoda; kmetijski plevel. Zakonska obveznost odstranjevanja za lastnike zemljišč."
+  },
+  {
+    "id": "zlezava-nedotika",
+    "name_sl": "Žlezava nedotika",
+    "name_lat": "Impatiens glandulifera",
+    "group": "rastlina",
+    "habitat": "obrežja voda, vlažni gozdovi, jarki",
+    "emoji": "🌸",
+    "description": "Do 2,5 m visoka enoletnica s sočnim rdečkastim steblom in rožnatimi do vijoličnimi cvetovi. Zreli plodovi ob dotiku eksplozivno izstrelijo semena.",
+    "similar": "Drobnocvetna nedotika (manjši rumeni cvetovi)",
+    "impact": "Preraste obrežno vegetacijo; po odmiranju jeseni pušča gola tla, kar poveča erozijo brežin."
+  },
+  {
+    "id": "kanadska-zlata-rozga",
+    "name_sl": "Kanadska zlata rozga",
+    "name_lat": "Solidago canadensis",
+    "group": "rastlina",
+    "habitat": "opuščeni travniki, obrežja, ceste, železnice",
+    "emoji": "🌼",
+    "description": "Do 2 m visoka trajnica z drobnimi rumenimi koški v gostih latastih socvetjih. Razrašča se s korenikami in tvori obsežne sestoje.",
+    "similar": "Orjaška zlata rozga (golo steblo), domača zlata rozga (redkejše socvetje)",
+    "impact": "Izpodriva travniške vrste in slabša habitat opraševalcem izven cvetenja; zmanjšuje biodiverziteto travnikov."
+  },
+  {
+    "id": "robinija",
+    "name_sl": "Robinija (neprava akacija)",
+    "name_lat": "Robinia pseudoacacia",
+    "group": "rastlina",
+    "habitat": "gozdni robovi, suha rastišča, nasipi",
+    "emoji": "🌳",
+    "description": "Do 25 m visoko drevo s trni na poganjkih, lihopernatimi listi in dišečimi belimi cvetovi v grozdih. Obrašča iz korenin in panjev.",
+    "similar": "Jesen (brez trnov, nasprotno nameščeni listi)",
+    "impact": "Z vezavo dušika spreminja tla in izpodriva vrste suhih travišč, ki so med najbolj ogroženimi habitati."
+  },
+  {
+    "id": "veliki-pajesen",
+    "name_sl": "Veliki pajesen",
+    "name_lat": "Ailanthus altissima",
+    "group": "rastlina",
+    "habitat": "mesta, ceste, železnice, opuščene površine, kras",
+    "emoji": "🌲",
+    "description": "Hitro rastoče drevo z velikimi lihopernatimi listi, ki ob mečkanju neprijetno dišijo. Lističi imajo pri dnu 1–2 zobca z žlezo. Močno odganja iz korenin.",
+    "similar": "Jesen, robinija (brez žleznih zobcev na lističih)",
+    "impact": "Zarašča suha travišča in kraške površine, poškoduje zidove in infrastrukturo; alelopatske snovi zavirajo rast drugih rastlin."
+  },
+  {
+    "id": "amerikanski-javor",
+    "name_sl": "Amerikanski javor",
+    "name_lat": "Acer negundo",
+    "group": "rastlina",
+    "habitat": "obrežja rek, logi, mesta",
+    "emoji": "🍁",
+    "description": "Do 20 m visoko drevo z lihopernatimi listi s 3–7 lističi (za javor nenavadno). Mladi poganjki so pogosto poprhnjeni z voskom.",
+    "similar": "Jesen (bolj številni lističi, drugačni plodovi)",
+    "impact": "V obrežnih gozdovih izpodriva domače vrbe, topole in jesene."
+  },
+  {
+    "id": "tigrasti-komar",
+    "name_sl": "Tigrasti komar",
+    "name_lat": "Aedes albopictus",
+    "group": "zival",
+    "habitat": "naselja – vsaka stoječa voda (podstavki, sodi, žlebovi)",
+    "emoji": "🦟",
+    "description": "Majhen črno-bel komar z izrazito belo črto po sredini oprsja in belimi obročki na nogah. Aktiven podnevi. Razmnožuje se v majhnih količinah stoječe vode.",
+    "similar": "Domači komarji (aktivni ponoči, brez izrazite bele črte)",
+    "impact": "Nadležen dnevni pikač; potencialni prenašalec virusov (denga, čikungunja, zika)."
+  },
+  {
+    "id": "harlekinska-polonica",
+    "name_sl": "Harlekinska polonica",
+    "name_lat": "Harmonia axyridis",
+    "group": "zival",
+    "habitat": "vrtovi, sadovnjaki, jeseni tudi v stavbah",
+    "emoji": "🐞",
+    "description": "Velika polonica (6–8 mm) zelo spremenljivih barv – od oranžne s pikami do črne z rdečimi pikami. Na vratnem ščitu pogosto vzorec črke M. Jeseni se množično zbira na stavbah.",
+    "similar": "Domače polonice (manjše, stalnejši vzorci)",
+    "impact": "Pleni ličinke domačih polonic in drugih žuželk; jeseni nadleguje v stavbah, lahko poškoduje sadje in grozdje."
+  },
+  {
+    "id": "nutrija",
+    "name_sl": "Nutrija",
+    "name_lat": "Myocastor coypus",
+    "group": "zival",
+    "habitat": "reke, jezera, mokrišča",
+    "emoji": "🦫",
+    "description": "Velik vodni glodavec (do 10 kg) z okroglastim repom in oranžnimi sekalci. Aktivna predvsem v mraku, pogosto tudi podnevi ob urbanih vodah.",
+    "similar": "Bober (širok ploščat rep), pižmovka (manjša, bočno sploščen rep)",
+    "impact": "Objeda obrežno in vodno vegetacijo, z rovi poškoduje brežine in nasipe; ogroža gnezda vodnih ptic."
+  },
+  {
+    "id": "signalni-rak",
+    "name_sl": "Signalni rak",
+    "name_lat": "Pacifastacus leniusculus",
+    "group": "zival",
+    "habitat": "reke, potoki, jezera",
+    "emoji": "🦞",
+    "description": "Velik rak z gladkim oklepom in značilno belo-modrikasto liso na členku klešč (»signal«). Spodnja stran klešč je živo rdeča.",
+    "similar": "Domači koščak in jelševec (brez bele lise, hrapav oklep)",
+    "impact": "Prenaša račjo kugo, ki je smrtonosna za domače rake; izpodriva domače vrste rakov."
+  },
+  {
+    "id": "rdecevratka",
+    "name_sl": "Popisana sklednica (rdečevratka)",
+    "name_lat": "Trachemys scripta",
+    "group": "zival",
+    "habitat": "ribniki, mrtvice, počasi tekoče vode",
+    "emoji": "🐢",
+    "description": "Vodna želva z rdečo ali rumeno progo za očesom. V naravo so jo zanesli lastniki, ki so spustili hišne ljubljenčke. Rada se sonči na deblih in kamnih.",
+    "similar": "Močvirska sklednica (domača, brez rdeče/rumene proge, drobne rumene pike)",
+    "impact": "Tekmuje z ogroženo domačo močvirsko sklednico za hrano in mesta za sončenje."
+  },
+  {
+    "id": "spanski-lazar",
+    "name_sl": "Španski lazar",
+    "name_lat": "Arion vulgaris",
+    "group": "zival",
+    "habitat": "vrtovi, njive, travniki, gozdni robovi",
+    "emoji": "🐌",
+    "description": "Velik polž brez hišice, običajno oranžno rjave do rdečkaste barve, dolg do 12 cm. Množično se pojavlja v vlažnem vremenu.",
+    "similar": "Domači lazarji (težko ločljivi, zanesljiva določitev po notranji zgradbi)",
+    "impact": "Velik vrtni in kmetijski škodljivec; izpodriva domače vrste polžev."
+  },
+  {
+    "id": "marmorirana-smrdljivka",
+    "name_sl": "Marmorirana smrdljivka",
+    "name_lat": "Halyomorpha halys",
+    "group": "zival",
+    "habitat": "sadovnjaki, vrtovi, polja, jeseni stavbe",
+    "emoji": "🪲",
+    "description": "Stenica marmoriranega rjavo-sivega vzorca z izmenično svetlimi in temnimi obročki na tipalkah in robu zadka. Jeseni se množično zateka v stavbe.",
+    "similar": "Domače ščitaste stenice (brez svetlih obročkov na tipalkah)",
+    "impact": "Povzroča veliko škodo v sadjarstvu in zelenjadarstvu (deformirani plodovi); nadležna v stanovanjih."
+  },
+  {
+    "id": "jesenov-ozig",
+    "name_sl": "Jesenov ožig",
+    "name_lat": "Hymenoscyphus fraxineus",
+    "group": "gliva",
+    "habitat": "gozdovi in drevoredi z jesenom",
+    "emoji": "🍄",
+    "description": "Gliva, ki povzroča odmiranje jesenov: venenje in odmiranje poganjkov, rjavenje listov, odmiranje krošnje. Drobna bela trosnjaka se poleti razvijeta na odpadlih listnih pecljih.",
+    "similar": "Poškodbe zaradi suše ali zmrzali (brez značilnih nekroz na skorji)",
+    "impact": "Množično odmiranje velikega jesena po vsej Evropi; velika gospodarska in ekološka škoda v gozdovih."
+  },
+  {
+    "id": "orjaska-zlatica",
+    "name_sl": "Deljenolistna rudbekija",
+    "name_lat": "Rudbeckia laciniata",
+    "group": "rastlina",
+    "habitat": "obrežja, vlažni travniki, jarki",
+    "emoji": "🌻",
+    "description": "Do 2,5 m visoka trajnica z deljenimi listi in rumenimi koški s povešenimi jezičastimi cvetovi ter zelenkasto sredino. Pobegla okrasna rastlina.",
+    "similar": "Sončnice in druge rudbekije (temna sredina koška)",
+    "impact": "Tvori goste sestoje ob vodah in izpodriva domačo obrežno vegetacijo."
+  }
+]

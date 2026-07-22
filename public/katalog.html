@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invazivke – katalog vrst</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">🌿 Invazivke</a>
+    <nav>
+      <a href="/">Zemljevid</a>
+      <a href="/katalog.html" class="active">Katalog vrst</a>
+      <a href="/prijava.html">Prijavi opazovanje</a>
+      <a href="/admin.html">Skrbništvo</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Katalog invazivnih tujerodnih vrst</h1>
+    <p class="subtitle">Najpogostejše invazivne vrste v Sloveniji. Če vrsto opaziš v naravi, jo <a href="/prijava.html">prijavi</a>.</p>
+
+    <div class="toolbar">
+      <select id="f-group">
+        <option value="">Vse skupine</option>
+        <option value="rastlina">Rastline</option>
+        <option value="zival">Živali</option>
+        <option value="gliva">Glive</option>
+      </select>
+      <input type="search" id="f-search" placeholder="Išči po imenu …" />
+    </div>
+
+    <div class="cards" id="cards"></div>
+  </main>
+
+  <footer>Podatki o vrstah so informativni. Za strokovno določitev se obrni na pristojne institucije (npr. invazivke.si).</footer>
+
+  <script src="app.js"></script>
+  <script>
+    let all = [];
+
+    function render() {
+      const group = document.getElementById('f-group').value;
+      const q = document.getElementById('f-search').value.trim().toLowerCase();
+      const wrap = document.getElementById('cards');
+      wrap.innerHTML = '';
+      for (const s of all) {
+        if (group && s.group !== group) continue;
+        if (q && !(s.name_sl.toLowerCase().includes(q) || s.name_lat.toLowerCase().includes(q))) continue;
+        const card = document.createElement('div');
+        card.className = 'card';
+        const head = document.createElement('div');
+        head.className = 'head';
+        head.innerHTML = `<span class="emoji">${s.emoji}</span><div><h3>${s.name_sl}</h3><div class="lat">${s.name_lat}</div></div>`;
+        card.appendChild(head);
+        card.appendChild(badge(s.group, GROUP_LABELS[s.group]));
+        card.insertAdjacentHTML(
+          'beforeend',
+          `<p>${s.description}</p>
+           <p><span class="label">Življenjski prostor:</span> ${s.habitat}</p>
+           <p><span class="label">Podobne vrste:</span> ${s.similar}</p>
+           <p><span class="label">Vpliv:</span> ${s.impact}</p>
+           <a class="btn" href="/prijava.html?vrsta=${s.id}">Prijavi opazovanje</a>`
+        );
+        wrap.appendChild(card);
+      }
+      if (!wrap.children.length) wrap.innerHTML = '<p>Ni zadetkov.</p>';
+    }
+
+    (async () => {
+      all = await fetchSpecies();
+      document.getElementById('f-group').addEventListener('change', render);
+      document.getElementById('f-search').addEventListener('input', render);
+      render();
+    })();
+  </script>
+</body>
+</html>

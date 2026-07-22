@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invazivke – zemljevid opazovanj</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">🌿 Invazivke</a>
+    <nav>
+      <a href="/" class="active">Zemljevid</a>
+      <a href="/katalog.html">Katalog vrst</a>
+      <a href="/prijava.html">Prijavi opazovanje</a>
+      <a href="/admin.html">Skrbništvo</a>
+    </nav>
+  </header>
+
+  <main class="full">
+    <div class="map-filters">
+      <strong>Filtri</strong>
+      <select id="f-species"><option value="">Vse vrste</option></select>
+      <select id="f-status">
+        <option value="potrjeno">Samo potrjena</option>
+        <option value="">Vsa opazovanja</option>
+        <option value="neverificirano">Neverificirana</option>
+        <option value="vec-podatkov">Potrebuje več podatkov</option>
+      </select>
+      <input type="date" id="f-from" title="Od datuma" />
+      <input type="date" id="f-to" title="Do datuma" />
+      <span class="hint" id="f-count"></span>
+    </div>
+    <div id="map"></div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const map = L.map('map').setView(SI_CENTER, 8);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    const layer = L.layerGroup().addTo(map);
+    let species = {};
+
+    async function refresh() {
+      const params = new URLSearchParams();
+      const sp = document.getElementById('f-species').value;
+      const st = document.getElementById('f-status').value;
+      const from = document.getElementById('f-from').value;
+      const to = document.getElementById('f-to').value;
+      if (sp) params.set('species', sp);
+      if (st) params.set('status', st);
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+
+      const res = await fetch('/api/observations?' + params);
+      const list = await res.json();
+      layer.clearLayers();
+      for (const o of list) {
+        const s = species[o.species_id] || { name_sl: o.species_id, emoji: '❓' };
+        const marker = L.marker([o.lat, o.lng]).addTo(layer);
+        const div = document.createElement('div');
+        div.innerHTML =
+          `<strong>${s.emoji} ${s.name_sl}</strong><br>` +
+          `<em>${s.name_lat || ''}</em><br>` +
+          `${fmtDate(o.created_at)} · ${o.quantity || 'količina ni podana'}<br>`;
+        div.appendChild(badge(o.status, STATUS_LABELS[o.status]));
+        if (o.photo) {
+          const img = document.createElement('img');
+          img.src = o.photo;
+          img.className = 'popup-photo';
+          img.alt = s.name_sl;
+          div.appendChild(img);
+        }
+        marker.bindPopup(div);
+      }
+      document.getElementById('f-count').textContent = `Prikazanih: ${list.length}`;
+    }
+
+    (async () => {
+      const list = await fetchSpecies();
+      species = speciesById(list);
+      const sel = document.getElementById('f-species');
+      for (const s of list) {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.emoji} ${s.name_sl}`;
+        sel.appendChild(opt);
+      }
+      for (const id of ['f-species', 'f-status', 'f-from', 'f-to']) {
+        document.getElementById(id).addEventListener('change', refresh);
+      }
+      refresh();
+    })();
+  </script>
+</body>
+</html>
